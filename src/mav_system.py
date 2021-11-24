@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import traceback
 from mavsdk import System
 
 
@@ -11,27 +10,17 @@ class drone():
         self.tasks = []
         # logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 
-
-    # def start(self):
-    #     connected = asyncio.run(self.__setup())
-    #     print("Finish setup")
-    #     if connected:
-    #         print("Connect success")
-    #         asyncio.create_task(self.__thread())
-    #         print("System loop started successfully")
-    #     return connected
-
     
     async def stop(self):
         print("Stopping system loop")
-        loop = asyncio.get_event_loop()
+        # loop = asyncio.get_event_loop()
         # loop.get_tasks()
         # cancel tasks
         
 
     def is_idle(self) -> bool:
         self.tasks = [task for task in self.tasks if not task.done()]
-        return not self.tasks
+        return len(self.tasks) == 0
 
 
     def run_action(self, coroutine):
@@ -64,3 +53,17 @@ class drone():
                 print("Global position estimate ok")
                 break
         return True
+
+
+async def main():
+    sys = drone()
+    await sys.start()
+    sys.run_action(sys.takeoff)
+    print("Start task.", "tasks:", len(sys.tasks))
+    print("Is idle:", sys.is_idle())
+    await asyncio.sleep(2)
+    print("Is idle:", sys.is_idle())
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

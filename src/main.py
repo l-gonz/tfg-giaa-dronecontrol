@@ -43,6 +43,7 @@ async def main():
     while True:
         try:
             last_gesture = control_loop(drone, gui, hand, last_gesture)
+            await asyncio.sleep(0.1)
         except KeyboardInterrupt:
             print("Request stop")
             break

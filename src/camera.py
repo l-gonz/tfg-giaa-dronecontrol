@@ -4,7 +4,7 @@ import cv2
 
 class handler():
     FONT = cv2.FONT_HERSHEY_PLAIN
-    GREEN = (255, 0, 255)
+    PINK = (255, 0, 255)
 
     def __init__(self):
         self.__capture = cv2.VideoCapture(0)
@@ -15,6 +15,7 @@ class handler():
         return cv2.waitKey(1) >= 0
 
     def capture(self):
+        # TODO: Exit gracefully if video cant be captured
         success, self.img = self.__capture.read()
         if success:
             imgRGB = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
@@ -23,10 +24,11 @@ class handler():
 
     def render(self):
         fps = self.get_fps()
-        cv2.putText(self.img, str(fps), (10, 70), self.FONT, 3, self.GREEN, 3)
+        cv2.putText(self.img, str(fps), (10, 70), self.FONT, 3, self.PINK, 3)
         cv2.imshow("Image", self.img)
 
     def annotate(self, value):
+        #TODO: Annotate video image with info from gestures and drone movements
         print(value)
 
     def get_fps(self):

@@ -1,5 +1,5 @@
 Firmware
 Firmware/*
 
-conda-env
-conda-env/*
+**/__pycache__/**
+**/Docker/**

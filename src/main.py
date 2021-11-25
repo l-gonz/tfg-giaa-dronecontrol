@@ -8,7 +8,10 @@ from hand_tracking import Gesture
 
 
 def map_gesture_to_action(drone, gesture) -> str:
-    if gesture == Gesture.FIST:
+    if gesture == Gesture.NO_HAND:
+        drone.run_action(drone.land)
+        return "Gesture: Land"
+    if gesture == Gesture.HAND:
         drone.run_action(drone.takeoff)
         return "Gesture: Take-off"
 
@@ -23,6 +26,7 @@ async def control_loop(drone, gui, hand):
         gesture = hand.get_gesture(img)
         if drone.is_idle() and gesture != last_gesture:
             action = map_gesture_to_action(drone, gesture)
+        hand.draw_hands(gui.img)
         gui.annotate(action, 1)
         gui.render()
 
@@ -31,7 +35,7 @@ async def control_loop(drone, gui, hand):
             break
 
         # Yield control to started actions
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.01)
         last_gesture = gesture
 
 

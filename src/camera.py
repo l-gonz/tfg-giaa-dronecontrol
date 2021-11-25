@@ -9,8 +9,8 @@ class handler():
     GREEN = (0, 255, 0)
     IMAGE_SCALE = 1.5
     FONT_SCALE = 2
-    WIDTH = 1280
-    HEIGHT = 720
+    WIDTH = 640
+    HEIGHT = 480
 
 
     def __init__(self):
@@ -26,7 +26,7 @@ class handler():
 
 
     def is_exit(self):
-        return cv2.waitKey(25) >= 0
+        return cv2.waitKey(1) >= 0
 
 
     def capture(self):

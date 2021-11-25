@@ -1,5 +1,6 @@
 import asyncio
 import logging
+
 from mavsdk import System
 from mavsdk.telemetry import LandedState
 
@@ -15,6 +16,27 @@ class drone():
         handler = logging.StreamHandler()
         handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s: %(message)s'))
         self.log.addHandler(handler)
+
+
+    async def start(self):
+        try:
+            await asyncio.wait_for(self.system.connect(system_address=f"udp://:{self.port}"), timeout=5)
+        except asyncio.TimeoutError:
+            return False
+
+        self.log.info("Waiting for drone to connect...")
+        async for state in self.system.core.connection_state():
+            if state.is_connected:
+                self.log.debug("Drone discovered!")
+                break
+
+        self.log.debug("Waiting for drone to have a global position estimate...")
+        async for health in self.system.telemetry.health():
+            if health.is_global_position_ok:
+                self.log.debug("Global position estimate ok")
+                break
+        self.log.info("System ready")
+        return True
 
     
     async def stop(self):
@@ -44,25 +66,8 @@ class drone():
         await self.system.action.takeoff()
 
 
-    async def start(self):
-        try:
-            await asyncio.wait_for(self.system.connect(system_address=f"udp://:{self.port}"), timeout=5)
-        except asyncio.TimeoutError:
-            return False
-
-        self.log.info("Waiting for drone to connect...")
-        async for state in self.system.core.connection_state():
-            if state.is_connected:
-                self.log.debug("Drone discovered!")
-                break
-
-        self.log.debug("Waiting for drone to have a global position estimate...")
-        async for health in self.system.telemetry.health():
-            if health.is_global_position_ok:
-                self.log.debug("Global position estimate ok")
-                break
-        self.log.info("System ready")
-        return True
+    async def land(self):
+        await self.system.action.land()
 
 
 async def main():

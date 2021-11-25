@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from mavsdk import System
+from mavsdk.telemetry import LandedState
 
 
 class drone():
@@ -8,14 +9,18 @@ class drone():
         self.port = port
         self.system = System()
         self.tasks = []
-        # logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
+
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(logging.INFO)
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s: %(message)s'))
+        self.log.addHandler(handler)
 
     
     async def stop(self):
-        print("Stopping system loop")
-        # loop = asyncio.get_event_loop()
-        # loop.get_tasks()
-        # cancel tasks
+        #TODO Cancel tasks
+        for task in self.tasks:
+            await task
         
 
     def is_idle(self) -> bool:
@@ -24,13 +29,17 @@ class drone():
 
 
     def run_action(self, coroutine):
-        print("Started new task")
+        self.log.info("New action " + coroutine.__name__)
         task = asyncio.create_task(coroutine())
         self.tasks.append(task)
         
 
     async def takeoff(self):
-        print("Sent takeoff to system")
+        async for state in self.system.telemetry.landed_state():
+            if state != LandedState.ON_GROUND:
+                self.log.warn("Cannot take-off, not on ground")
+                return
+            break
         await self.system.action.arm()
         await self.system.action.takeoff()
 
@@ -41,17 +50,18 @@ class drone():
         except asyncio.TimeoutError:
             return False
 
-        print("Waiting for drone to connect...")
+        self.log.info("Waiting for drone to connect...")
         async for state in self.system.core.connection_state():
             if state.is_connected:
-                print("Drone discovered!")
+                self.log.debug("Drone discovered!")
                 break
 
-        print("Waiting for drone to have a global position estimate...")
+        self.log.debug("Waiting for drone to have a global position estimate...")
         async for health in self.system.telemetry.health():
             if health.is_global_position_ok:
-                print("Global position estimate ok")
+                self.log.debug("Global position estimate ok")
                 break
+        self.log.info("System ready")
         return True
 
 

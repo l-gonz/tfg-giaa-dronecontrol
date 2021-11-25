@@ -1,5 +1,5 @@
-import sys
 import asyncio
+import logging
 
 import mav_system
 import camera
@@ -13,41 +13,41 @@ def map_gesture_to_action(drone, gesture) -> str:
         return "Gesture: Take-off"
 
 
-def control_loop(drone, gui, hand, last_gesture):
-    img = gui.capture()
-    if img is None:
-        return 0
+async def control_loop(drone, gui, hand):
+    last_gesture = 0
+    action = ""
 
-    gesture = hand.get_gesture(img)
-    if drone.is_idle() and gesture != last_gesture:
-        action = map_gesture_to_action(drone, gesture)
-        gui.annotate(action)
+    while True:
+        img = gui.capture()
 
-    gui.render()
-    if gui.is_exit():
-        raise KeyboardInterrupt
+        gesture = hand.get_gesture(img)
+        if drone.is_idle() and gesture != last_gesture:
+            action = map_gesture_to_action(drone, gesture)
+        gui.annotate(action, 1)
+        gui.render()
 
-    return gesture
+        # Check for loop end
+        if gui.is_exit():
+            break
+
+        # Yield control to started actions
+        await asyncio.sleep(0.1)
+        last_gesture = gesture
 
 
 async def main():
     drone = mav_system.drone()
 
     if not await drone.start():
-        sys.exit("System connect time-out")
+        logging.error("MAV system connect timeout")
+        return
 
     gui = camera.handler()
     hand = hand_tracking.tracker()
-    last_gesture = 0
+    
+    await control_loop(drone, gui, hand)
 
-    while True:
-        try:
-            last_gesture = control_loop(drone, gui, hand, last_gesture)
-            await asyncio.sleep(0.1)
-        except KeyboardInterrupt:
-            print("Request stop")
-            break
-
+    logging.warning("System stop")
     await drone.stop()
 
 

@@ -9,9 +9,12 @@ from hand_tracking import Gesture
 
 def map_gesture_to_action(drone, gesture) -> str:
     if gesture == Gesture.NO_HAND:
+        drone.run_action(drone.return_failsafe)
+        return "Gesture: Return"
+    if gesture == Gesture.STOP:
         drone.run_action(drone.land)
         return "Gesture: Land"
-    if gesture == Gesture.HAND:
+    if gesture == Gesture.FIST:
         drone.run_action(drone.takeoff)
         return "Gesture: Take-off"
 

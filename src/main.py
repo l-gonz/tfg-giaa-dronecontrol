@@ -24,7 +24,7 @@ async def control_loop(drone, gui, hand):
         img = gui.capture()
 
         gesture = hand.get_gesture(img)
-        if drone.is_idle() and gesture != last_gesture:
+        if drone.is_idle and gesture != last_gesture:
             action = map_gesture_to_action(drone, gesture)
         hand.draw_hands(gui.img)
         gui.annotate(action, 1)

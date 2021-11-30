@@ -1,5 +1,4 @@
 import time
-import logging
 import typing
 
 import numpy
@@ -8,7 +7,7 @@ import mediapipe.python.solutions.hands as mp_hands
 import mediapipe.python.solutions.drawing_utils as mp_drawing
 import mediapipe.python.solutions.hands_connections as mp_connections
 
-import gestures
+from dronecontrol import gestures, utils
 
 class Color():
     """Define color constants to use with cv2."""
@@ -30,28 +29,30 @@ class HandGui():
     
     __current_time = 0
     __past_time = 0
-    __past_gesture = gestures.Gesture.NO_HAND
+    __past_gesture = None
     __gesture_event_handler = []
-    img = None
     fps = 0
     hand_landmarks = None
 
-    def __init__(self, max_num_hands=1):
-        self.__capture = cv2.VideoCapture(0)
+    def __init__(self, camera=0, max_num_hands=1):
+        self.__capture = cv2.VideoCapture(camera)
         self.hand_model = mp_hands.Hands(max_num_hands=max_num_hands)
+        self.log = utils.make_logger(__name__)
+        self.__clear_image()
 
         if self.__capture.isOpened():
             self.__capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.WIDTH)
             self.__capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.HEIGHT)
         else:
-            logging.error("Cannot access camera")
+            self.log.error("Cannot access camera")
 
 
     def capture(self):
         """Capture image from webcam and extract hand landmarks."""
         success, self.img = self.__capture.read()
         if not success:
-            self.img = numpy.zeros((self.HEIGHT, self.WIDTH, 3), numpy.uint8)
+            self.log.error("Cannot access camera")
+            self.__clear_image()
 
         rgb_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
         results = self.hand_model.process(rgb_img)
@@ -61,7 +62,7 @@ class HandGui():
 
         detector = gestures.Detector(self.hand_landmarks)
         gesture = detector.get_gesture()
-        if gesture != self.__past_gesture:
+        if self.__past_gesture is None or gesture != self.__past_gesture:
             self.__past_gesture = gesture
             self.__invoke_gesture(gesture)
 
@@ -91,9 +92,14 @@ class HandGui():
             self.FONT, self.FONT_SCALE, Color.GREEN, self.FONT_SCALE)
 
 
-    def subscribe_to_gesture(self, func: function):
+    def subscribe_to_gesture(self, func: typing.Callable[[gestures.Gesture], None]):
         """Subscribe function to the new gesture event."""
         self.__gesture_event_handler.append(func)
+
+
+    def unsubscribe_to_gesture(self, func: typing.Callable[[gestures.Gesture], None]):
+        """Subscribe function to the new gesture event."""
+        self.__gesture_event_handler.remove(func)
 
 
     def __invoke_gesture(self, gesture):
@@ -132,18 +138,5 @@ class HandGui():
             return (10, self.HEIGHT - 50)
 
 
-def main():
-    cam = HandGui()
-    # while True:
-    cam.capture()
-    cam.annotate("Drone: Take-off", 1)
-    cam.annotate("Hand: detected", 2)
-    cam.render()
-
-    cv2.waitKey(1)
-        # if cv2.waitKey(1) >= 0:
-        #     break
-
-
-if __name__ == "__main__":
-    main()
+    def __clear_image(self):
+        self.img = numpy.zeros((self.HEIGHT, self.WIDTH, 3), numpy.uint8)

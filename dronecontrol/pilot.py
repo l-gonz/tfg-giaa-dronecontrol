@@ -1,13 +1,13 @@
 import asyncio
 import logging
-from typing import List, NamedTuple
+import typing
 
 import mavsdk
-from mavsdk import telemetry
 from mavsdk.action import ActionError
 from mavsdk.telemetry import LandedState
 from mavsdk.offboard import OffboardError, VelocityBodyYawspeed
-from mavsdk.telemetry_pb2 import Position
+
+from dronecontrol import utils
 
 
 class System():
@@ -20,20 +20,15 @@ class System():
     WAIT_TIME = 0.05
 
     is_offboard = False
-    actions = [] # type: List[Action]
+    actions = [] # type: typing.List[Action]
 
     def __init__(self, port=14540):
         self.port = port
         self.mav = mavsdk.System()
-
-        self.log = logging.getLogger(__name__)
-        self.log.setLevel(logging.INFO)
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s: %(message)s'))
-        self.log.addHandler(handler)
+        self.log = utils.make_logger(__name__)
 
 
-    def queue_action(self, func: function, params: dict):
+    def queue_action(self, func: typing.Callable, params: dict):
         """
         Add action to queue.
         
@@ -157,8 +152,8 @@ class System():
             return pos.relative_altitude_m()
 
 
-class Action(NamedTuple):
-    func: function
+class Action(typing.NamedTuple):
+    func: typing.Callable
     params: dict
 
 

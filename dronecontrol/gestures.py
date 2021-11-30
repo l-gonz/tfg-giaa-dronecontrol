@@ -1,8 +1,8 @@
 from enum import Enum
 import numpy as np
-
 import mediapipe.python.solutions.hands as mediapipe
-import graphics
+
+from dronecontrol import utils
 
 class Gesture(Enum):
     NO_HAND = 0
@@ -21,6 +21,7 @@ class Detector():
     EXTENDED_FINGER_THRESHOLD = 50
 
     def __init__(self, hands_landmarks):
+        self.log = utils.make_logger(__name__)
         self.hands = hands_landmarks
         if self.hands != None:
             self.__process_hand()
@@ -67,17 +68,3 @@ class Detector():
         unit_v2 = v2 / np.linalg.norm(v2)
         rad = np.arccos(np.dot(unit_v1, unit_v2))
         return np.rad2deg(rad)
-
-
-def main():
-    gui = graphics.HandGui()
-
-    # while True:
-    gui.capture()
-    hand = Detector(gui.hand_landmarks)
-    gesture = hand.get_gesture()
-    gui.annotate(str(gesture), 1)
-    gui.render()
-
-if __name__ == "__main__":
-    main()

@@ -10,7 +10,7 @@ class Gesture(Enum):
     FIST = 2
 
 
-class Joint(Enum):
+class Joint():
     FIRST = 0
     MID_LOW = 1
     MID_UP = 2

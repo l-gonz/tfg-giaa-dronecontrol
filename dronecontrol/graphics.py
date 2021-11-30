@@ -1,8 +1,9 @@
 import time
 import typing
-
+import datetime
 import numpy
 import cv2
+import os
 import mediapipe.python.solutions.hands as mp_hands
 import mediapipe.python.solutions.drawing_utils as mp_drawing
 import mediapipe.python.solutions.hands_connections as mp_connections
@@ -27,15 +28,17 @@ class HandGui():
     WIDTH = 640
     HEIGHT = 480
     
-    __current_time = 0
-    __past_time = 0
-    __past_gesture = None
-    __gesture_event_handler = []
-    fps = 0
-    hand_landmarks = None
 
     def __init__(self, camera=0, max_num_hands=1):
         self.__capture = cv2.VideoCapture(camera)
+        self.__gesture_event_handler = []
+
+        self.__current_time = 0
+        self.__past_time = 0
+        self.__past_gesture = None
+
+        self.fps = 0
+        self.hand_landmarks = None
         self.hand_model = mp_hands.Hands(max_num_hands=max_num_hands)
         self.log = utils.make_logger(__name__)
         self.__clear_image()
@@ -54,6 +57,7 @@ class HandGui():
             self.log.error("Cannot access camera")
             self.__clear_image()
 
+        self.img = cv2.flip(self.img, 1)
         rgb_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
         results = self.hand_model.process(rgb_img)
 
@@ -102,6 +106,15 @@ class HandGui():
         self.__gesture_event_handler.remove(func)
 
 
+    def save_image(self, filepath: str=None):
+        """Save current captured image to file."""
+        if not filepath:
+            if not os.path.exists('img'):
+                os.makedirs('img')
+            filepath = "img/" + datetime.datetime.now().strftime("%Y%m%d-%h%m%s") + ".jpg"
+        cv2.imwrite(filepath, self.img)
+
+
     def __invoke_gesture(self, gesture):
         """Trigger all functions subscribed to new gesture"""
         for func in self.__gesture_event_handler:
@@ -140,3 +153,24 @@ class HandGui():
 
     def __clear_image(self):
         self.img = numpy.zeros((self.HEIGHT, self.WIDTH, 3), numpy.uint8)
+
+
+def take_images():
+    """Ran a graphic interface where images can
+    be saved using the Space key.
+    
+    Quit with 'q'."""
+    gui = HandGui()
+    while True:
+        gui.capture()
+        key = gui.render()
+        if key < 0:
+            continue
+        if key == ord("q"):
+            break
+        if key == ord(" "):
+            gui.save_image()
+
+
+if __name__ == "__main__":
+    take_images()

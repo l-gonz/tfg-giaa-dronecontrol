@@ -3,3 +3,5 @@ Firmware/*
 
 **/__pycache__/**
 **/Docker/**
+
+**/img/**

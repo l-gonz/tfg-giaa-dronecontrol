@@ -31,7 +31,6 @@ def test_render_no_cam():
     gui.render(False, False)
     assert not numpy.any(gui.img)
 
-
 def test_subscriptions():
     gui = graphics.HandGui(NO_CAM)
     def check_no_hand(g):
@@ -50,7 +49,4 @@ def test_clear_subscriptions():
     gui.subscribe_to_gesture(check_not_called)
     gui.unsubscribe_to_gesture(check_not_called)
     gui.capture()
-    assert True
-
-def test_take_picture_separate():
     assert True

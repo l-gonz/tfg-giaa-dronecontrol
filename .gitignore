@@ -1,7 +1,9 @@
-Firmware
-Firmware/*
-
+venv
+.vscode
 **/__pycache__/**
 **/Docker/**
+
+Firmware
+Firmware/*
 
 **/img/**

@@ -1,19 +1,21 @@
+import json
+from collections import namedtuple
 
-# def main():
-#     gui = graphics.HandGui()
+from dronecontrol import graphics, gestures
 
-#     # while True:
-#     gui.capture()
-#     hand = Detector(gui.hand_landmarks)
-#     gesture = hand.get_gesture()
-#     gui.annotate(str(gesture), 1)
-#     gui.render()
+gui = graphics.HandGui()
 
-# if __name__ == "__main__":
-#     main()
+def test_no_hand():
+    lm = gui.get_landmarks("img/empty.jpg").multi_hand_landmarks
+    det = gestures.Detector(lm)
+    assert det.get_gesture() == gestures.Gesture.NO_HAND
 
+def test_stop():
+    lm = gui.get_landmarks("img/stop.jpg").multi_hand_landmarks
+    det = gestures.Detector(lm)
+    assert det.get_gesture() == gestures.Gesture.STOP
 
-
-################## Utils #######################
-def load_image():
-    pass
+def test_fist():
+    lm = gui.get_landmarks("img/fist.jpg").multi_hand_landmarks
+    det = gestures.Detector(lm)
+    assert det.get_gesture() == gestures.Gesture.FIST

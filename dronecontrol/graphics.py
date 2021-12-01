@@ -58,9 +58,7 @@ class HandGui():
             self.__clear_image()
 
         self.img = cv2.flip(self.img, 1)
-        rgb_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
-        results = self.hand_model.process(rgb_img)
-
+        results = self.get_landmarks()
         self.hand_landmarks = results.multi_hand_landmarks
         self.hand_landmarks_world = results.multi_hand_world_landmarks
 
@@ -115,6 +113,19 @@ class HandGui():
         cv2.imwrite(filepath, self.img)
 
 
+    def get_landmarks(self, filepath: str = None) -> typing.NamedTuple:
+        """Return landmark solution from image.
+        
+        Reads the image from a file if given or from the
+        last captured image if not."""
+        if filepath:
+            img = cv2.imread(filepath)
+        else:
+            img = self.img
+        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        return self.hand_model.process(rgb_img)
+
+
     def __invoke_gesture(self, gesture):
         """Trigger all functions subscribed to new gesture"""
         for func in self.__gesture_event_handler:
@@ -155,15 +166,15 @@ class HandGui():
         self.img = numpy.zeros((self.HEIGHT, self.WIDTH, 3), numpy.uint8)
 
 
-def take_images():
-    """Ran a graphic interface where images can
+def take_images(as_text=False):
+    """Run a graphic interface where images can
     be saved using the Space key.
     
     Quit with 'q'."""
     gui = HandGui()
     while True:
         gui.capture()
-        key = gui.render()
+        key = gui.render(False, False)
         if key < 0:
             continue
         if key == ord("q"):

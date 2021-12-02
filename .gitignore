@@ -1,5 +1,9 @@
+venv
+.vscode
+**/__pycache__/**
+**/Docker/**
+
 Firmware
 Firmware/*
 
-**/__pycache__/**
-**/Docker/**
+**/img/**

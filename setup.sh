@@ -2,12 +2,6 @@
 PX4="PX4-Autopilot"
 
 # Install conda
-wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.10.3-Linux-x86_64.sh
-bash Miniconda3-py39_4.10.3-Linux-x86_64.sh
-conda update conda
-conda env create -p conda-env -f environment.yml
-conda activate ./conda-env
-
 sudo apt-get update && \
     apt-get install -y git && \
     apt-get -y autoremove && \
@@ -38,7 +32,3 @@ chmod u+x ./QGroundControl.AppImage
 # Build
 cd $PX4
 DONT_RUN=1 make px4_sitl jmavsim
-
-# conda installs this
-# sudo pip3 install mavsdk aioconsole
-# conda install -c conda-forge opencv

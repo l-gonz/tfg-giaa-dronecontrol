@@ -16,6 +16,7 @@ class Joint():
     MID_UP = 2
     TIP = 3
 
+
 class Detector():
     """Detect hand gestures from joint landmarks."""
     EXTENDED_FINGER_THRESHOLD = 50

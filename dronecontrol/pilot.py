@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import typing
 
 import mavsdk
@@ -8,6 +7,11 @@ from mavsdk.telemetry import LandedState
 from mavsdk.offboard import OffboardError, VelocityBodyYawspeed
 
 from dronecontrol import utils
+
+
+class Action(typing.NamedTuple):
+    func: typing.Callable
+    params: dict
 
 
 class System():
@@ -19,23 +23,13 @@ class System():
     STOP_VELOCITY = VelocityBodyYawspeed(0.0, 0.0, 0.0, 0.0)
     WAIT_TIME = 0.05
 
-    is_offboard = False
-    actions = [] # type: typing.List[Action]
 
     def __init__(self, port=14540):
+        self.is_offboard = False
+        self.actions = [] # type: typing.List[Action]
         self.port = port
         self.mav = mavsdk.System()
         self.log = utils.make_logger(__name__)
-
-
-    def queue_action(self, func: typing.Callable, params: dict):
-        """
-        Add action to queue.
-        
-        Will be executed after previous actions are finished.
-        """
-        action = Action(func, params)
-        self.actions.append(action)
 
 
     async def start(self):
@@ -46,19 +40,48 @@ class System():
         until they are finished.
         The loop will sleep if the queue is empty.
         """
-        # TODO Should make sure that sim and ground control are running
-        # check_dependencies()
+        # TODO Start drone and ground control
 
-        # TODO Check exception propagates to main thread
-        await self.__connect()
+        try:
+            await self.__connect()
+        except asyncio.exceptions.CancelledError:
+            self.log.warning("Connection cancelled")
+            return
+        except asyncio.exceptions.TimeoutError:
+            self.log.error("Connection time-out")
+            return
+
+        try:
+            while True:
+                if len(self.actions) > 0:
+                    action = self.actions.pop(0)
+                    self.log.info("Execute action: %s", action.func.__name__)
+                    await action.func(self, **action.params)
+                else:
+                    await asyncio.sleep(self.WAIT_TIME)
+        except asyncio.exceptions.CancelledError:
+            self.log.warning("System stop")
+
+
+    def queue_action(self, func: typing.Callable, params: dict = {}, interrupt: bool = False):
+        """
+        Add action to queue.
         
-        while True:
-            if len(self.actions) > 0:
-                action = self.actions.pop(0)
-                logging.info("New action: " + action.func.__name__)
-                await action.func(**action.params)
-            else:
-                await asyncio.sleep(self.WAIT_TIME)
+        Will be executed after previous actions are finished.
+        """
+        if interrupt:
+            self.clear_queue()
+        if func is None:
+            return
+        action = Action(func, params)
+        self.actions.append(action)
+        self.log.info("Queue action: %s", func.__name__)
+
+
+    def clear_queue(self):
+        """Clear all pending actions on the system queue."""
+        self.actions.clear()
+        self.log.warning("Queue cleared")
 
 
     async def __connect(self):
@@ -78,10 +101,6 @@ class System():
                 self.log.debug("Global position estimate ok")
                 break
         self.log.info("System ready")
-
-    ###########################
-    # TODO Make wait until action is complete
-    ###########################
 
     async def return_home(self):
         """Return to home position and land."""
@@ -104,12 +123,10 @@ class System():
         except ActionError as error:
             # if already armed, ignore
             self.log.error("ARM: " + error)
-        await self.system.action.takeoff()
+        await self.mav.action.takeoff()
         async for state in self.mav.telemetry.landed_state():
-            if state == LandedState.TAKING_OFF:
-                continue
-            break
-        self.log.info(await self.__get_relative_altitude())
+            if state == LandedState.IN_AIR:
+                break
 
 
     async def land(self):
@@ -118,6 +135,7 @@ class System():
 
 
     async def start_offboard(self):
+        # TODO WIP
         await self.mav.offboard.set_velocity_body(self.STOP_VELOCITY)
 
         try:
@@ -136,40 +154,23 @@ class System():
 
 
     async def set_velocity(self, forward=0.0, right=0.0, up=0.0, yaw=0.0):
+        # TODO WIP
         await self.mav.offboard.set_velocity_body(
             VelocityBodyYawspeed(forward, right, -up, yaw))
 
 
     async def __landing_finished(self):
+        """Runs until the drone has finished landing."""
         async for state in self.mav.telemetry.landed_state():
             if state == LandedState.ON_GROUND:
+                break
+        async for armed in self.mav.telemetry.armed():
+            if not armed:
                 self.log.info("Landing complete")
                 break
 
     
     async def __get_relative_altitude(self):
+        """Return relative altitude with the ground."""
         async for pos in self.mav.telemetry.position():
-            return pos.relative_altitude_m()
-
-
-class Action(typing.NamedTuple):
-    func: typing.Callable
-    params: dict
-
-
-async def main():
-    sys = System()
-    await sys.start()
-    await asyncio.sleep(0.5)
-    sys.run_action(sys.takeoff)
-    await asyncio.sleep(6)
-    await sys.start_offboard()
-    sys.run_action(sys.set_velocity, forward=2)
-    await asyncio.sleep(3)
-    sys.run_action(sys.set_velocity, forward=-2)
-    await asyncio.sleep(3)
-    await sys.return_home()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+            return pos.relative_altitude_m

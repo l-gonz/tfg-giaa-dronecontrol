@@ -64,7 +64,7 @@ class HandGui():
 
         detector = gestures.Detector(self.hand_landmarks)
         gesture = detector.get_gesture()
-        if self.__past_gesture is None or gesture != self.__past_gesture:
+        if gesture is not None and gesture != self.__past_gesture:
             self.__past_gesture = gesture
             self.__invoke_gesture(gesture)
 
@@ -128,6 +128,7 @@ class HandGui():
 
     def __invoke_gesture(self, gesture):
         """Trigger all functions subscribed to new gesture"""
+        self.log.info("New gesture: %s", gesture)
         for func in self.__gesture_event_handler:
             func(gesture)
 

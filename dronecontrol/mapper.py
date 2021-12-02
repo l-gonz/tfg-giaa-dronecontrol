@@ -1,29 +1,23 @@
-import typing
 import asyncio
 
 from dronecontrol import graphics, utils
 from .gestures import Gesture
 from .pilot import System
 
-def map_gesture_to_action(gesture) -> tuple[typing.Callable, dict]:
-    """Map a hand gesture to a drone action.
-    
-    Returns an action function and a parameter dictionary."""
+def map_gesture_to_action(system, gesture):
+    """Map a hand gesture to a drone action."""
     
     if gesture == Gesture.NO_HAND:
-        return System.return_home, {}
+        return system.queue_action(System.return_home, interrupt=True)
     if gesture == Gesture.STOP:
-        return System.land, {}
+        return system.queue_action(System.land)
     if gesture == Gesture.FIST:
-        return System.takeoff, {}
-
-
-def on_new_gesture(system, gesture):
-    action, params = map_gesture_to_action(gesture)
-    system.queue_action(action, params)
+        return system.queue_action(System.takeoff)
 
 
 async def gui_loop(gui):
+    """Running loop for the interface to capture
+    the image and render it."""
     log.info("Starting graphics")
     while True:
         gui.capture()
@@ -33,6 +27,7 @@ async def gui_loop(gui):
 
 
 async def cancel_pending(task):
+    """Stop previous running tasks."""
     if not task.done():
         task.cancel()
     await task
@@ -40,13 +35,14 @@ async def cancel_pending(task):
 
 
 async def run():
+    """Runs the GUI loop and the drone control thread simultaneously."""
     global log
     log = utils.make_logger(__name__)
     system = System()
     gui = graphics.HandGui()
     
     task = asyncio.create_task(system.start())
-    gui.subscribe_to_gesture(lambda g: on_new_gesture(system, g))
+    gui.subscribe_to_gesture(lambda g: map_gesture_to_action(system, g))
 
     await gui_loop(gui)
 

@@ -1,3 +1,5 @@
+Tested on Ubuntu 20.04
+
 # Installation
 
 1. Clone repository

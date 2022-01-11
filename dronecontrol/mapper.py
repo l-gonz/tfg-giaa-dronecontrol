@@ -21,15 +21,16 @@ def map_gesture_to_action(system, gesture):
         return system.queue_action(System.set_velocity, params={"right": -1.0})
 
 
-async def gui_loop(gui):
-    """Running loop for the interface to capture
-    the image and render it."""
-    log.info("Starting graphics")
-    while True:
-        gui.capture()
-        if gui.render() >= 0:
-            break
-        await asyncio.sleep(0.03)
+async def run_gui(gui):
+    """Run loop for the interface to capture
+    the image and render it.
+    
+    Return whether the loop should continue."""
+    gui.capture()
+    if gui.render() >= 0:
+        return False
+    await asyncio.sleep(0.03)
+    return True
 
 
 async def cancel_pending(task):
@@ -50,7 +51,12 @@ async def run():
     task = asyncio.create_task(system.start())
     gui.subscribe_to_gesture(lambda g: map_gesture_to_action(system, g))
 
-    await gui_loop(gui)
+    log.info("Starting graphics")
+    while True:
+        if not await run_gui(gui):
+            break
+        if task.done():
+            break
 
     log.warning("System stop")
     await cancel_pending(task)

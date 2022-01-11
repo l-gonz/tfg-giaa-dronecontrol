@@ -40,7 +40,6 @@ class System():
         until they are finished.
         The loop will sleep if the queue is empty.
         """
-        # TODO Start drone and ground control
 
         try:
             await self.__connect()
@@ -102,6 +101,7 @@ class System():
                 break
         self.log.info("System ready")
 
+
     async def return_home(self):
         """Return to home position and land."""
         if self.is_offboard:
@@ -130,12 +130,20 @@ class System():
 
 
     async def land(self):
+        if self.is_offboard:
+            await self.stop_offboard()
         await self.mav.action.land()
         await self.__landing_finished()
 
 
     async def start_offboard(self):
-        # TODO WIP
+
+        async for state in self.mav.telemetry.landed_state():
+            if state == LandedState.ON_GROUND:
+                self.log.warning("Cannot start offboard mode while drone is on the ground")
+                return
+            break
+
         await self.mav.offboard.set_velocity_body(self.STOP_VELOCITY)
 
         try:
@@ -150,11 +158,22 @@ class System():
 
     
     async def stop_offboard(self):
-        pass
+        await self.mav.offboard.set_velocity_body(self.STOP_VELOCITY)
+
+        try:
+            await self.mav.offboard.stop()
+        except OffboardError as error:
+            self.log.error(f"Stopping offboard mode failed with error code: {error._result.result}")
+            return
+
+        self.log.info("System exited offboard mode")
+        self.is_offboard = False
 
 
     async def set_velocity(self, forward=0.0, right=0.0, up=0.0, yaw=0.0):
-        # TODO WIP
+        if not self.is_offboard:
+            self.log.warning("Cannot set velocity because system is not in offboard mode")
+            return
         await self.mav.offboard.set_velocity_body(
             VelocityBodyYawspeed(forward, right, -up, yaw))
 

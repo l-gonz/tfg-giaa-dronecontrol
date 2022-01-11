@@ -13,6 +13,12 @@ def map_gesture_to_action(system, gesture):
         return system.queue_action(System.land)
     if gesture == Gesture.FIST:
         return system.queue_action(System.takeoff)
+    if gesture == Gesture.POINT_UP:
+        return system.queue_action(System.start_offboard)
+    if gesture == Gesture.POINT_RIGHT:
+        return system.queue_action(System.set_velocity, params={"right": 1.0})
+    if gesture == Gesture.POINT_LEFT:
+        return system.queue_action(System.set_velocity, params={"right": -1.0})
 
 
 async def gui_loop(gui):

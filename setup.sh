@@ -1,7 +1,6 @@
 #!/bin/bash
 PX4="PX4-Autopilot"
 
-# Install conda
 sudo apt-get update && \
     apt-get install -y git && \
     apt-get -y autoremove && \

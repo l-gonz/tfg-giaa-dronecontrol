@@ -51,7 +51,7 @@ class HandGui():
 
 
     def capture(self):
-        """Capture image from webcam and extract hand landmarks."""
+        """Capture image from webcam and extract hand gesture."""
         success, self.img = self.__capture.read()
         if not success:
             self.log.error("Cannot access camera")

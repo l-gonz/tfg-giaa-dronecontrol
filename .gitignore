@@ -1,7 +1,6 @@
 venv
 .vscode
-**/__pycache__/**
-**/Docker/**
+__pycache__
 
 Firmware
 Firmware/*

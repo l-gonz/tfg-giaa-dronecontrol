@@ -8,6 +8,9 @@ class Gesture(Enum):
     NO_HAND = 0
     STOP = 1
     FIST = 2
+    POINT_UP = 3
+    POINT_RIGHT = 4
+    POINT_LEFT = 5
 
 
 class Joint():
@@ -33,10 +36,12 @@ class Detector():
         if self.hands == None:
             return Gesture.NO_HAND
 
-        fingers = self.__get_fingers()
-        if fingers == 0:
+        finger_state = self.__get_finger_state()
+        if sum(finger_state) == 0:
             return Gesture.FIST
-        if fingers == 5:
+        if sum(finger_state) == 1 and finger_state[1]:
+            return self.__get_point_gesture()
+        if sum(finger_state) == 5:
             return Gesture.STOP
 
 
@@ -47,8 +52,9 @@ class Detector():
         self.fingers = np.array(data[1:]).reshape(5, 4, 3)
 
 
-    def __get_fingers(self):
-        """Calculate how many fingers are extended.
+    def __get_finger_state(self):
+        """Return a list with the status of each finger
+        of whether it is extended or not.
         
         Checks that the angle between a vector drawn from 
         the wrist to the first point and one from 
@@ -59,7 +65,20 @@ class Detector():
             tip = finger[Joint.TIP] - finger[Joint.FIRST]
             angle = Detector.__angle(base, tip)
             is_open.append(angle < self.EXTENDED_FINGER_THRESHOLD)
-        return sum(is_open)
+        return is_open
+
+    
+    def __get_point_gesture(self):
+        index = self.fingers[1]
+        index_vector = index[Joint.TIP] - index[Joint.FIRST]
+        angle = Detector.__angle(index_vector, np.array([1, 0, 0]))
+
+        if angle > 0 and angle < 80:
+            return Gesture.POINT_RIGHT
+        elif angle > 80 and angle < 100:
+            return Gesture.POINT_UP
+        elif angle > 100 and angle < 180:
+            return Gesture.POINT_LEFT
 
 
     @staticmethod

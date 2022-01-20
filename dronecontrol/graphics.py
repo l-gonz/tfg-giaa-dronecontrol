@@ -69,7 +69,7 @@ class HandGui():
             self.__invoke_gesture(gesture)
 
 
-    def render(self, show_fps=True, show_hands=True) -> int:
+    def render(self, show_fps=True, show_hands=True, delay=1) -> int:
         """Show captured image in a new window.
         
         Returns a keycode if a key was pressed during rendering
@@ -82,7 +82,7 @@ class HandGui():
         if show_fps:
             self.annotate(f"FPS: {self.fps}", 0)
         cv2.imshow("Image", self.img)
-        return cv2.waitKey(1)
+        return cv2.waitKey(delay)
 
 
     def annotate(self, value, channel=1):

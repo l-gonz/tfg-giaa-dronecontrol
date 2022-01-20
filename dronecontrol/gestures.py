@@ -11,6 +11,8 @@ class Gesture(Enum):
     POINT_UP = 3
     POINT_RIGHT = 4
     POINT_LEFT = 5
+    THUMB_RIGHT = 6
+    THUMB_LEFT = 7
 
 
 class Joint():
@@ -18,6 +20,17 @@ class Joint():
     MID_LOW = 1
     MID_UP = 2
     TIP = 3
+
+
+class FINGER():
+    THUMB = 0
+    INDEX = 1
+    MIDDLE = 2
+    RING = 3
+    LITTLE = 4
+
+
+VECTOR_UP = np.array([1, 0, 0])
 
 
 class Detector():
@@ -39,8 +52,8 @@ class Detector():
         finger_state = self.__get_finger_state()
         if sum(finger_state) == 0:
             return Gesture.FIST
-        if sum(finger_state) == 1 and finger_state[1]:
-            return self.__get_point_gesture()
+        if not any(finger_state[FINGER.MIDDLE:]):
+            return self.__get_thumb_index_combination()
         if sum(finger_state) == 5:
             return Gesture.STOP
 
@@ -68,10 +81,20 @@ class Detector():
         return is_open
 
     
+    def __get_thumb_index_combination(self):
+        point_gesture = self.__get_point_gesture()
+        if point_gesture == Gesture.POINT_UP:
+            thumb_gesture = self.__get_thumb_gesture()
+            if thumb_gesture:
+                return thumb_gesture
+        
+        return point_gesture
+
+
     def __get_point_gesture(self):
-        index = self.fingers[1]
+        index = self.fingers[FINGER.INDEX]
         index_vector = index[Joint.TIP] - index[Joint.FIRST]
-        angle = Detector.__angle(index_vector, np.array([1, 0, 0]))
+        angle = Detector.__angle(index_vector, VECTOR_UP)
 
         if angle > 0 and angle < 80:
             return Gesture.POINT_RIGHT
@@ -79,6 +102,19 @@ class Detector():
             return Gesture.POINT_UP
         elif angle > 100 and angle < 180:
             return Gesture.POINT_LEFT
+        else:
+            self.log.error("Could not detect point gesture")
+
+
+    def __get_thumb_gesture(self):
+        thumb = self.fingers[FINGER.THUMB]
+        thumb_vector = thumb[Joint.TIP] - thumb[Joint.FIRST]
+        angle = Detector.__angle(thumb_vector, VECTOR_UP)
+        
+        if angle > 0 and angle < 80:
+            return Gesture.THUMB_RIGHT
+        elif angle > 100 and angle < 180:
+            return Gesture.THUMB_LEFT
 
 
     @staticmethod

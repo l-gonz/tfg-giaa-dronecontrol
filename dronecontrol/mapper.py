@@ -50,7 +50,7 @@ async def run():
     """Runs the GUI loop and the drone control thread simultaneously."""
     global log
     log = utils.make_logger(__name__)
-    system = System()
+    system = System(serial="ttyUSB0")
     gui = graphics.HandGui()
     
     task = asyncio.create_task(system.start())

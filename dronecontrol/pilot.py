@@ -24,10 +24,11 @@ class System():
     WAIT_TIME = 0.05
 
 
-    def __init__(self, port=14540):
+    def __init__(self, port=14540, serial=None):
         self.is_offboard = False
         self.actions = [] # type: typing.List[Action]
         self.port = port
+        self.serial = serial
         self.mav = mavsdk.System()
         self.log = utils.make_logger(__name__)
 
@@ -42,7 +43,7 @@ class System():
         """
 
         try:
-            await self.__connect()
+            await self.connect()
         except asyncio.exceptions.CancelledError:
             self.log.warning("Connection cancelled")
             return
@@ -55,7 +56,10 @@ class System():
                 if len(self.actions) > 0:
                     action = self.actions.pop(0)
                     self.log.info("Execute action: %s", action.func.__name__)
-                    await action.func(self, **action.params)
+                    try:
+                        await asyncio.wait_for(action.func(self, **action.params), timeout=10)
+                    except asyncio.exceptions.TimeoutError:
+                        self.log.warning(f"Time out waiting for {action.func.__name__}")
                 else:
                     await asyncio.sleep(self.WAIT_TIME)
         except asyncio.exceptions.CancelledError:
@@ -83,12 +87,16 @@ class System():
         self.log.warning("Queue cleared")
 
 
-    async def __connect(self):
-        """Connect to ground control."""
+    async def connect(self):
+        """Connect to mavsdk server."""
         # Triggers TimeoutError if it can't connect
-        await asyncio.wait_for(self.mav.connect(system_address=f"udp://:{self.port}"), timeout=5)
-
         self.log.info("Waiting for drone to connect...")
+        
+        if self.serial:
+            await asyncio.wait_for(self.mav.connect(system_address=f"serial:///dev/{self.serial}"), timeout=30)
+        else:
+            await asyncio.wait_for(self.mav.connect(system_address=f"udp://:{self.port}"), timeout=5)
+
         async for state in self.mav.core.connection_state():
             if state.is_connected:
                 self.log.debug("Drone discovered!")
@@ -205,7 +213,20 @@ class System():
                 break
 
 
-    async def __get_relative_altitude(self):
-        """Return relative altitude with the ground."""
-        async for pos in self.mav.telemetry.position():
-            return pos.relative_altitude_m
+    @staticmethod
+    async def get_async_generated(generator):
+        async for item in generator:
+            return item
+
+
+
+async def test():
+    drone = System()
+    await drone.connect()
+    print(await System.get_async_generated(drone.mav.telemetry.position()))
+    print(await drone.mav.param.get_param_int("COM_RCL_EXCEPT"))
+    await asyncio.sleep(1)
+
+
+if __name__ == "__main__":
+    asyncio.run(test())

@@ -1,4 +1,5 @@
-from dronecontrol import graphics, gestures
+from dronecontrol.hands import graphics
+from dronecontrol.hands import gestures
 
 gui = graphics.HandGui()
 

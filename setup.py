@@ -16,7 +16,7 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 setup(
     name='dronecontrol',  # Required
-    version='0.0.1',  # Required
+    version='0.2',  # Required
     description='A sample Python project',  # Optional
     long_description=long_description,  # Optional
     long_description_content_type='text/markdown',  # Optional (see note above)
@@ -41,7 +41,7 @@ setup(
     ],
 
     keywords='drone computer-vision px4',  # Optional
-    packages=find_packages(where='dronecontrol'),  # Required
+    packages=find_packages(exclude=['test', 'Firmware']),  # Required
     python_requires='>=3.6, <4',
     #install_requires=['peppercorn'],  # Optional
     entry_points={  # Optional

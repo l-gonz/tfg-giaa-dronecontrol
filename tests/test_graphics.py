@@ -1,6 +1,7 @@
 import pytest
 import numpy
-from dronecontrol import graphics, gestures
+from dronecontrol.hands import graphics
+from dronecontrol.hands import gestures
 
 NO_CAM = 999
 

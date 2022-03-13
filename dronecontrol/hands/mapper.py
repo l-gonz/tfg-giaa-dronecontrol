@@ -1,8 +1,9 @@
 import asyncio
 
-from dronecontrol import graphics, utils
+from dronecontrol import utils
+from dronecontrol.hands import graphics
 from .gestures import Gesture
-from .pilot import System
+from ..pilot import System
 
 def map_gesture_to_action(system, gesture):
     """Map a hand gesture to a drone action."""
@@ -46,11 +47,12 @@ async def cancel_pending(task):
     log.info("All tasks finished")
 
 
-async def run():
+async def run(port=None, serial=None):
     """Runs the GUI loop and the drone control thread simultaneously."""
     global log
     log = utils.make_logger(__name__)
-    system = System(serial="ttyUSB0")
+
+    system = System(port, serial)
     gui = graphics.HandGui()
     
     task = asyncio.create_task(system.start())
@@ -66,7 +68,7 @@ async def run():
     log.warning("System stop")
     await cancel_pending(task)
 
-def main():
-    asyncio.run(run())
+def main(port=None, serial=None):
+    asyncio.run(run(port, serial))
 
     

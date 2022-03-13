@@ -22,13 +22,16 @@ class System():
     """
     STOP_VELOCITY = VelocityBodyYawspeed(0.0, 0.0, 0.0, 0.0)
     WAIT_TIME = 0.05
+    DEFAULT_SERIAL_ADDRESS = "ttyUSB0"
+    DEFAULT_UDP_PORT = 14540
+    TIMEOUT = 15
 
 
-    def __init__(self, port=14540, serial=None):
+    def __init__(self, port=None, use_serial=False):
         self.is_offboard = False
         self.actions = [] # type: typing.List[Action]
-        self.port = port
-        self.serial = serial
+        self.port = port or self.DEFAULT_UDP_PORT
+        self.serial = self.DEFAULT_SERIAL_ADDRESS if use_serial else None
         self.mav = mavsdk.System()
         self.log = utils.make_logger(__name__)
 
@@ -90,12 +93,10 @@ class System():
     async def connect(self):
         """Connect to mavsdk server."""
         # Triggers TimeoutError if it can't connect
-        self.log.info("Waiting for drone to connect...")
         
-        if self.serial:
-            await asyncio.wait_for(self.mav.connect(system_address=f"serial:///dev/{self.serial}"), timeout=30)
-        else:
-            await asyncio.wait_for(self.mav.connect(system_address=f"udp://:{self.port}"), timeout=5)
+        address = f"serial:///dev/{self.serial}" if self.serial else f"udp://:{self.port}"
+        self.log.info("Waiting for drone to connect on address " + address)
+        await asyncio.wait_for(self.mav.connect(system_address=address), timeout=self.TIMEOUT)
 
         async for state in self.mav.core.connection_state():
             if state.is_connected:

@@ -34,3 +34,4 @@ DONT_RUN=1 make px4_sitl_default none_iris
 
 # WSL
 # export PX4_SIM_HOST_ADDR=172.25.48.1
+# pip install -e .

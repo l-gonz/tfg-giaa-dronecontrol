@@ -6,3 +6,5 @@ Firmware
 Firmware/*
 
 **/img/**
+
+*.egg-info

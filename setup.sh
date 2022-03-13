@@ -15,10 +15,10 @@ if [[ ! -d $PX4 ]]
 then
     git clone https://github.com/PX4/PX4-Autopilot.git
 fi
-git -C $PX4 checkout master
+git -C $PX4 checkout v1.12.3
 git -C $PX4 submodule update --init --recursive
 
-./$PX4/Tools/setup/ubuntu.sh
+bash ./$PX4/Tools/setup/ubuntu.sh
 
 # QGroundControl
 sudo usermod -a -G dialout $USER
@@ -30,4 +30,7 @@ chmod u+x ./QGroundControl.AppImage
 
 # Build
 cd $PX4
-DONT_RUN=1 make px4_sitl jmavsim
+DONT_RUN=1 make px4_sitl_default none_iris 
+
+# WSL
+# export PX4_SIM_HOST_ADDR=172.25.48.1

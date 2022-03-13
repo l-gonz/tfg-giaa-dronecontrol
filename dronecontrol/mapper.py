@@ -66,6 +66,7 @@ async def run():
     log.warning("System stop")
     await cancel_pending(task)
 
-
-if __name__ == "__main__":
+def main():
     asyncio.run(run())
+
+    

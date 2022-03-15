@@ -1,7 +1,5 @@
 import time
 import typing
-import datetime
-import numpy
 import cv2
 import os
 import mediapipe.python.solutions.hands as mp_hands
@@ -10,6 +8,7 @@ import mediapipe.python.solutions.hands_connections as mp_connections
 
 from dronecontrol import utils
 from dronecontrol.hands import gestures
+from dronecontrol.video_source import CameraSource, FileSource, VideoSource
 
 class Color():
     """Define color constants to use with cv2."""
@@ -24,16 +23,15 @@ class HandGui():
     the presence of a hand.
     """
     FONT = cv2.FONT_HERSHEY_PLAIN
-    IMAGE_SCALE = 1.5
     FONT_SCALE = 2
     WIDTH = 640
     HEIGHT = 480
     
 
-    def __init__(self, camera=0, max_num_hands=1):
-        self.__capture = cv2.VideoCapture(camera)
-        self.__gesture_event_handler = []
+    def __init__(self, file=None, max_num_hands=1):
 
+        self.log = utils.make_logger(__name__)
+        self.__gesture_event_handler = []
         self.__current_time = 0
         self.__past_time = 0
         self.__past_gesture = None
@@ -41,24 +39,15 @@ class HandGui():
         self.fps = 0
         self.hand_landmarks = None
         self.hand_model = mp_hands.Hands(max_num_hands=max_num_hands)
-        self.log = utils.make_logger(__name__)
-        self.__clear_image()
 
-        if self.__capture.isOpened():
-            self.__capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.WIDTH)
-            self.__capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.HEIGHT)
-        else:
-            self.log.error("Cannot access camera")
+        self.__source = self.__get_source(file)
+        self.img = VideoSource.get_blank()
 
 
     def capture(self):
         """Capture image from webcam and extract hand gesture."""
-        success, self.img = self.__capture.read()
-        if not success:
-            self.log.error("Cannot access camera")
-            self.__clear_image()
+        self.img = self.__source.get_frame()
 
-        self.img = cv2.flip(self.img, 1)
         results = self.get_landmarks()
         self.hand_landmarks = results.multi_hand_landmarks
         self.hand_landmarks_world = results.multi_hand_world_landmarks
@@ -105,15 +94,6 @@ class HandGui():
         self.__gesture_event_handler.remove(func)
 
 
-    def save_image(self, filepath: str=None):
-        """Save current captured image to file."""
-        if not filepath:
-            if not os.path.exists('img'):
-                os.makedirs('img')
-            filepath = "img/" + datetime.datetime.now().strftime("%Y%m%d-%h%m%s") + ".jpg"
-        cv2.imwrite(filepath, self.img)
-
-
     def get_landmarks(self, filepath: str = None) -> typing.NamedTuple:
         """Return landmark solution from image.
         
@@ -125,6 +105,16 @@ class HandGui():
             img = self.img
         rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return self.hand_model.process(rgb_img)
+
+
+    def __get_source(file):
+        if file:
+            if os.path.exists(file):
+                return FileSource(file)
+            else:
+                raise FileNotFoundError
+        else:
+            return CameraSource()
 
 
     def __invoke_gesture(self, gesture):
@@ -162,28 +152,3 @@ class HandGui():
             return (10, self.HEIGHT - 10)
         if channel == 2:
             return (10, self.HEIGHT - 50)
-
-
-    def __clear_image(self):
-        self.img = numpy.zeros((self.HEIGHT, self.WIDTH, 3), numpy.uint8)
-
-
-def take_images(as_text=False):
-    """Run a graphic interface where images can
-    be saved using the Space key.
-    
-    Quit with 'q'."""
-    gui = HandGui()
-    while True:
-        gui.capture()
-        key = gui.render(False, False)
-        if key < 0:
-            continue
-        if key == ord("q"):
-            break
-        if key == ord(" "):
-            gui.save_image()
-
-
-if __name__ == "__main__":
-    take_images()

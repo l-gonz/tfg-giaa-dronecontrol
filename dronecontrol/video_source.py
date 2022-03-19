@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from os import get_blocking
 import numpy
 import cv2
 
@@ -20,6 +19,10 @@ class VideoSource(ABC):
     @abstractmethod
     def get_frame(self):
         return VideoSource.get_blank()
+
+    @abstractmethod
+    def get_size(self):
+        pass
 
     @staticmethod
     def get_blank():
@@ -46,6 +49,12 @@ class CameraSource(VideoSource):
         img = cv2.flip(img, 1)
         return img
 
+    def get_size(self):
+        return int(self.__source.get(3)), int(self.__source.get(4))
+
+    def close(self):
+        self.__source.release()
+
 
 class FileSource(VideoSource):
     def __init__(self, file):
@@ -65,3 +74,6 @@ class FileSource(VideoSource):
             raise VideoSourceEmpty("Video file finished")
 
         return img
+
+    def get_size(self):
+        return int(self.__source.get(3)), int(self.__source.get(4))

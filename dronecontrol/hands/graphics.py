@@ -40,7 +40,7 @@ class HandGui():
         self.hand_landmarks = None
         self.hand_model = mp_hands.Hands(max_num_hands=max_num_hands)
 
-        self.__source = self.__get_source(file)
+        self.__source = HandGui.__get_source(file)
         self.img = VideoSource.get_blank()
 
 
@@ -107,6 +107,7 @@ class HandGui():
         return self.hand_model.process(rgb_img)
 
 
+    @staticmethod
     def __get_source(file):
         if file:
             if os.path.exists(file):

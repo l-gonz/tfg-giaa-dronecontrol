@@ -6,6 +6,9 @@ import datetime
 from dronecontrol.video_source import CameraSource
 
 LOGGING_FORMAT = '%(levelname)s:%(name)s: %(message)s'
+IMAGE_FOLDER = 'img'
+VIDEO_CODE = cv2.VideoWriter_fourcc('M','J','P','G')
+
 
 def make_logger(name: str, level=logging.INFO) -> logging.Logger:
     """Return a dedicated logger for a module."""
@@ -17,13 +20,24 @@ def make_logger(name: str, level=logging.INFO) -> logging.Logger:
     return log
 
 
-def save_image(self, img, filepath: str=None):
+def get_formatted_date():
+    return datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+
+
+def save_image(img, filepath: str=None):
     """Save current captured image to file."""
     if not filepath:
-        if not os.path.exists('img'):
-            os.makedirs('img')
-        filepath = "img/" + datetime.datetime.now().strftime("%Y%m%d-%h%m%s") + ".jpg"
+        if not os.path.exists(IMAGE_FOLDER):
+            os.makedirs(IMAGE_FOLDER)
+        filepath = f"{IMAGE_FOLDER}/{get_formatted_date()}.jpg"
     cv2.imwrite(filepath, img)
+
+
+def write_video(source):
+    if not os.path.exists(IMAGE_FOLDER):
+        os.makedirs(IMAGE_FOLDER)
+    filepath = f"{IMAGE_FOLDER}/{get_formatted_date()}.avi"
+    return cv2.VideoWriter(filepath, VIDEO_CODE, 10, source.get_size())
 
 
 def take_images():
@@ -43,13 +57,13 @@ def take_images():
         cv2.putText(img, "SPACE to take picture\n'q' to exit",
             (10, 30), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
         cv2.imshow("Image", img)
+    source.close()
 
 
 def take_video():
     source = CameraSource()
-    frame_width = int(source.get(3))
-    frame_height = int(source.get(4))
     is_recording = False
+    out = None
     
     while True:
         img = source.get_frame()
@@ -59,9 +73,9 @@ def take_video():
         if key == ord(" "):
             if is_recording:
                 out.release()
+                out = None
             else:
-                out = cv2.VideoWriter('img/outpy.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 
-                            10, (frame_width, frame_height))
+                out = write_video(source)
             is_recording = not is_recording
         
         if is_recording:
@@ -71,5 +85,6 @@ def take_video():
             (10, 30), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
         cv2.imshow("Image", img)
 
-    source.release()
-    out.release()
+    if out:
+        out.release()
+    source.close()

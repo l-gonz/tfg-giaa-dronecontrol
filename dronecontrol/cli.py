@@ -1,6 +1,6 @@
 import click
 from dronecontrol import tools as tools_module
-from dronecontrol.follow import goturn as follow_entry
+from dronecontrol.follow import start as follow_entry
 from dronecontrol.hands import mapper as hands_entry
 
 
@@ -12,13 +12,15 @@ def main():
 @click.option("-p", "--port", type=int, help="port for UDP connections")
 @click.option("--udp", "serial", flag_value=False, default=True, help="connect to drone system through UDP, default address is localhost")
 @click.option("--serial", "serial", flag_value=True, help="connect to drone system through serial, default device is ttyUSB0")
-# @click.option("-f", "--file", type=click.File, help="file to use as source instead of the camera")
-def hand(port, serial):
-    hands_entry.main(port, serial)
+@click.option("-f", "--file", type=click.Path(exists=True, readable=True), help="file to use as source instead of the camera")
+def hand(port, serial, file):
+    print(f"Port: {port}, serial: {serial}, file: {file}")
+    hands_entry.main(port, serial, file)
 
 @main.command()
-def follow():
-    follow_entry.main()
+@click.option("--ip", type=str, default="", help="simulator IP address")
+def follow(ip):
+    follow_entry.main(ip)
 
 @main.group()
 def tools():

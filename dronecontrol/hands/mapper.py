@@ -36,9 +36,11 @@ async def run_gui(gui):
         gui.capture()
     except Exception:
         log.error("Fatal error: cannot capture image")
+        gui.close()
         return False
 
-    if gui.render() >= 0:
+    key = gui.render()
+    if key == 'q':
         return False
 
     await asyncio.sleep(0.03)

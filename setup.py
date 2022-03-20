@@ -46,7 +46,7 @@ setup(
     #install_requires=['peppercorn'],  # Optional
     entry_points={  # Optional
         'console_scripts': [
-            'dronecontrol=dronecontrol.command_line:main',
+            'dronecontrol=dronecontrol.cli:main',
         ],
     },
 

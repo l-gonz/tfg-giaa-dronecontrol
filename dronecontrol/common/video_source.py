@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy
 import cv2
+import airsim
 
 from dronecontrol.common import utils
 
@@ -15,6 +16,9 @@ class VideoSourceEmpty(Exception):
 class VideoSource(ABC):
     def __init__(self) -> None:
         self.log = utils.make_logger(__name__)
+
+    def get_delay(self):
+        return 1
 
     @abstractmethod
     def get_frame(self):
@@ -54,6 +58,7 @@ class CameraSource(VideoSource):
 
     def close(self):
         self.__source.release()
+        cv2.destroyAllWindows()
 
 
 class FileSource(VideoSource):
@@ -74,14 +79,37 @@ class FileSource(VideoSource):
             self.close()
             raise VideoSourceEmpty("Video file finished")
 
-        return img
+        return cv2.flip(img, 1)
 
     def get_size(self):
         return int(self.__source.get(3)), int(self.__source.get(4))
 
+    def get_delay(self):
+        return 50
+
     def close(self):
         self.__source.release()
+        cv2.destroyAllWindows()
 
 
 class SimulatorSource(VideoSource):
-    pass
+    def __init__(self, ip):
+        super().__init__()
+        self.__source = airsim.MultirotorClient(ip)
+
+    def get_frame(self):
+        image = self.__source.simGetImages([
+            airsim.ImageRequest("front_center", airsim.ImageType.Scene, False, False)
+        ])[0]
+        image_bytes = numpy.fromstring(image.image_data_uint8, dtype=numpy.uint8)
+        return image_bytes.reshape(image.height, image.width, 3)
+
+    def get_size(self):
+        return (0, 0)
+
+    def get_delay(self):
+        return int(1000/60)
+
+    def close(self):
+        # self.__source
+        cv2.destroyAllWindows()

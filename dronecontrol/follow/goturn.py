@@ -74,7 +74,6 @@ def main():
         cv2.waitKey(50)
         
     source.close()
-    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()

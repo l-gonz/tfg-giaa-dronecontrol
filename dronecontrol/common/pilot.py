@@ -222,7 +222,7 @@ class System():
 
 
 async def test():
-    drone = System()
+    drone = System(port=14550)
     await drone.connect()
     print(await System.get_async_generated(drone.mav.telemetry.position()))
     print(await drone.mav.param.get_param_int("COM_RCL_EXCEPT"))

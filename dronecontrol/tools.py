@@ -1,28 +1,11 @@
-import logging
-import cv2
 import os
 import datetime
+import cv2
 
-from dronecontrol.video_source import CameraSource
+from dronecontrol.common.video_source import CameraSource
 
-LOGGING_FORMAT = '%(levelname)s:%(name)s: %(message)s'
 IMAGE_FOLDER = 'img'
 VIDEO_CODE = cv2.VideoWriter_fourcc('M','J','P','G')
-
-
-def make_logger(name: str, level=logging.INFO) -> logging.Logger:
-    """Return a dedicated logger for a module."""
-    log = logging.getLogger(name)
-    log.setLevel(level)
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(LOGGING_FORMAT))
-    log.addHandler(handler)
-    return log
-
-
-def get_formatted_date():
-    return datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-
 
 def save_image(img, filepath: str=None):
     """Save current captured image to file."""
@@ -38,6 +21,10 @@ def write_video(source):
         os.makedirs(IMAGE_FOLDER)
     filepath = f"{IMAGE_FOLDER}/{get_formatted_date()}.avi"
     return cv2.VideoWriter(filepath, VIDEO_CODE, 10, source.get_size())
+    
+
+def get_formatted_date():
+    return datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 
 
 def take_images():

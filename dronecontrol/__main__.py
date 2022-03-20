@@ -1,3 +1,3 @@
-from dronecontrol import command_line
+from dronecontrol import cli
 
-command_line.main()
+cli.main()

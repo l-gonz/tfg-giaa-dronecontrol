@@ -1,6 +1,6 @@
 import click
-from dronecontrol import utils as utils_module
-from dronecontrol.follow import start as follow_entry
+from dronecontrol import tools as tools_module
+from dronecontrol.follow import goturn as follow_entry
 from dronecontrol.hands import mapper as hands_entry
 
 
@@ -21,16 +21,16 @@ def follow():
     follow_entry.main()
 
 @main.group()
-def utils():
+def tools():
     pass
 
-@utils.command()
+@tools.command()
 def take_image():
-    utils_module.take_images()
+    tools_module.take_images()
 
-@utils.command()
+@tools.command()
 def take_video():
-    utils_module.take_video()
+    tools_module.take_video()
 
 if __name__ == "__main__":
     main()

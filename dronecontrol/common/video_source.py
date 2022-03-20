@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy
 import cv2
 
-from dronecontrol import utils
+from dronecontrol.common import utils
 
 WIDTH = 640
 HEIGHT = 480
@@ -64,16 +64,24 @@ class FileSource(VideoSource):
             self.log.error("Could not open video file")
 
     def get_frame(self):
-        if self.__source.isOpened():
-            success, img = self.__source.read()
-            if not success:
-                img = CameraSource.get_blank()
-                raise VideoSourceEmpty("Cannot access video file")
-        else:
-            self.__source.release()
+        if not self.__source.isOpened():
+            self.close()
+            raise VideoSourceEmpty("Cannot access video file")
+
+        success, img = self.__source.read()
+        if not success:
+            img = CameraSource.get_blank()
+            self.close()
             raise VideoSourceEmpty("Video file finished")
 
         return img
 
     def get_size(self):
         return int(self.__source.get(3)), int(self.__source.get(4))
+
+    def close(self):
+        self.__source.release()
+
+
+class SimulatorSource(VideoSource):
+    pass

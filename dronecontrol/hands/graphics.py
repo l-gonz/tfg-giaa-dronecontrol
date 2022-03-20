@@ -6,9 +6,9 @@ import mediapipe.python.solutions.hands as mp_hands
 import mediapipe.python.solutions.drawing_utils as mp_drawing
 import mediapipe.python.solutions.hands_connections as mp_connections
 
-from dronecontrol import utils
+from dronecontrol.common import utils
 from dronecontrol.hands import gestures
-from dronecontrol.video_source import CameraSource, FileSource, VideoSource
+from dronecontrol.common.video_source import CameraSource, FileSource, VideoSource
 
 class Color():
     """Define color constants to use with cv2."""

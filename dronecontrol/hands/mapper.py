@@ -1,9 +1,9 @@
 import asyncio
 
-from dronecontrol import utils
+from dronecontrol.common import utils
 from dronecontrol.hands import graphics
 from .gestures import Gesture
-from ..pilot import System
+from ..common.pilot import System
 
 
 def map_gesture_to_action(system, gesture):

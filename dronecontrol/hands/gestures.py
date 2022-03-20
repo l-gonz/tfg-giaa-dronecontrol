@@ -2,7 +2,7 @@ from enum import Enum
 import numpy as np
 import mediapipe.python.solutions.hands as mediapipe
 
-from dronecontrol import utils
+from dronecontrol.common import utils
 
 class Gesture(Enum):
     NO_HAND = 0

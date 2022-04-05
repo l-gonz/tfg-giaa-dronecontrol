@@ -39,22 +39,32 @@ async def run():
     with mp_pose.Pose() as pose:
         while True:
             image = source.get_frame()
-            results = pose.process(image)
+            try:
+                results = pose.process(image)
+            except Exception as e:
+                log.error(e)
+                continue
+            
+            size = (image.shape[1], image.shape[0])
             if results.pose_landmarks:
-                size = (image.shape[1], image.shape[0])
                 p1, p2 = get_bounding_box(results.pose_landmarks.landmark, size)
                 points = [tuple(map(int, p)) for p in [p1, p2]]
                 cv2.rectangle(image, points[0], points[1], (255,0,0), 2, 1)
-                await control_yaw(p1, p2, size)
+            else:
+                p1, p2 = np.asarray((0, 0)), np.asarray((size[0], size[1]))
+            await control_yaw(p1, p2, size)
 
             cv2.imshow("Camera", image)
-            if cv2.waitKey(source.get_delay()) == 'r':
+            if cv2.waitKey(source.get_delay()) == ord('q'):
                 break
 
-    pilot.stop_offboard()
-    pilot.land()
+    await pilot.stop_offboard()
+    await pilot.land()
     await asyncio.sleep(3)
+
+    # Clean up
     source.close()
+    cv2.waitKey(1)
 
 
 def main(ip):

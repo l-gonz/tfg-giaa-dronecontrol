@@ -1,9 +1,10 @@
 import asyncio
 
-from dronecontrol import utils
+from dronecontrol.common import utils
 from dronecontrol.hands import graphics
 from .gestures import Gesture
-from ..pilot import System
+from ..common.pilot import System
+
 
 def map_gesture_to_action(system, gesture):
     """Map a hand gesture to a drone action."""
@@ -26,15 +27,20 @@ def map_gesture_to_action(system, gesture):
         return system.queue_action(System.set_velocity, params={"forward": -1.0})
     
 
-
 async def run_gui(gui):
     """Run loop for the interface to capture
     the image and render it.
     
     Return whether the loop should continue."""
-    gui.capture()
+    try:
+        gui.capture()
+    except Exception:
+        log.error("Fatal error: cannot capture image")
+        return False
+
     if gui.render() >= 0:
         return False
+
     await asyncio.sleep(0.03)
     return True
 
@@ -47,18 +53,18 @@ async def cancel_pending(task):
     log.info("All tasks finished")
 
 
-async def run(port=None, serial=None):
+async def run(port=None, serial=None, file=None):
     """Runs the GUI loop and the drone control thread simultaneously."""
     global log
     log = utils.make_logger(__name__)
 
     system = System(port, serial)
-    gui = graphics.HandGui()
+    gui = graphics.HandGui(file)
     
     task = asyncio.create_task(system.start())
     gui.subscribe_to_gesture(lambda g: map_gesture_to_action(system, g))
 
-    log.info("Starting graphics")
+    log.info("Starting graphics loop")
     while True:
         if not await run_gui(gui):
             break
@@ -68,7 +74,11 @@ async def run(port=None, serial=None):
     log.warning("System stop")
     await cancel_pending(task)
 
-def main(port=None, serial=None):
-    asyncio.run(run(port, serial))
+
+def main(port=None, serial=None, file=None):
+    try:
+        asyncio.run(run(port, serial, file))
+    except asyncio.CancelledError:
+        log.warning("Cancel program run")
 
     

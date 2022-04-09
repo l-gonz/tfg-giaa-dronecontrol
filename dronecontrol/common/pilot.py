@@ -6,7 +6,7 @@ from mavsdk.action import ActionError
 from mavsdk.telemetry import LandedState
 from mavsdk.offboard import OffboardError, VelocityBodyYawspeed
 
-from dronecontrol import utils
+from dronecontrol.common import utils
 
 
 class Action(typing.NamedTuple):

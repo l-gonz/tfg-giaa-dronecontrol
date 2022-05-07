@@ -5,12 +5,24 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": "Python Hand",
             "type": "python",
             "request": "launch",
             "module": "dronecontrol",
             "justMyCode": true,
-            "args": ["hand", "-f", "img/hand-short.mp4"]
+            "args": [
+                "hand",
+                "-f",
+                "img/hand-short.mp4"
+            ]
         },
         {
             "name": "Python Follow",
@@ -18,7 +30,9 @@
             "request": "launch",
             "module": "dronecontrol",
             "justMyCode": true,
-            "args": ["follow", "--ip", "172.28.80.1"]
+            "args": [
+                "follow"
+            ]
         }
     ]
 }

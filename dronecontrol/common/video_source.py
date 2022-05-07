@@ -93,8 +93,10 @@ class FileSource(VideoSource):
 
 
 class SimulatorSource(VideoSource):
-    def __init__(self, ip):
+    def __init__(self, ip=None):
         super().__init__()
+        if ip is None:
+            ip = SimulatorSource.__get_wsl_host_ip()
         self.__source = airsim.MultirotorClient(ip)
 
     def get_frame(self):
@@ -111,5 +113,12 @@ class SimulatorSource(VideoSource):
         return int(1000/60)
 
     def close(self):
-        # self.__source
         cv2.destroyAllWindows()
+
+    def __get_wsl_host_ip():
+        with open("/etc/resolv.conf") as file:
+            for line in file:
+                if "nameserver" in line:
+                    print(line.split()[-1])
+                    return line.split()[-1]
+        return ""

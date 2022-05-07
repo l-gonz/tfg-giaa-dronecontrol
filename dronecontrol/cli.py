@@ -18,9 +18,10 @@ def hand(port, serial, file):
     hands_entry.main(port, serial, file)
 
 @main.command()
-@click.option("--ip", type=str, default="", help="simulator IP address")
-def follow(ip):
-    follow_entry.main(ip)
+@click.option("--ip", type=str, default=None, help="simulator IP address")
+@click.option("--sim/--no-sim", "use_simulator", default=True, help="run with AirSim as video source (default True)")
+def follow(ip, use_simulator):
+    follow_entry.main(ip, use_simulator)
 
 @main.group()
 def tools():

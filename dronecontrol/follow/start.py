@@ -6,6 +6,7 @@ import mediapipe as mp
 from dronecontrol.common import utils
 from dronecontrol.common.video_source import CameraSource, SimulatorSource
 from dronecontrol.common.pilot import System
+from dronecontrol.follow.controller import Controller
 
 mp_pose = mp.solutions.pose
 
@@ -34,26 +35,6 @@ def get_bounding_box(landmarks):
     return np.asarray((p1_x, p1_y)) - diff, np.asarray((p2_x, p2_y)) + diff
 
 
-def get_yaw_velocity(p1, p2):
-    mid_point = p1 + (p2 - p1) / 2
-    if mid_point[0] < 0.45:
-        return -BASE_SPEED
-    elif mid_point[0] > 0.55:
-        return BASE_SPEED
-    else:
-        return 0
-
-
-def get_forward_velocity(p1, p2):
-    if np.array_equal(np.asarray((p1, p2)), np.asarray(CAMERA_BOX)): return 0
-    height = p2[1] - p1[1]
-    if height < 0.3:
-        return BASE_SPEED
-    elif height > 0.7:
-        return -BASE_SPEED
-    else: return 0
-
-
 async def fly(yaw, fwd):
     await pilot.set_velocity(forward=fwd, yaw=yaw)
     if fwd == 0: return
@@ -74,14 +55,14 @@ async def run():
             try:
                 results = pose.process(image)
             except Exception as e:
-                log.error(e)
-                continue
+                log.error("Image error: " + str(e))
+                results.pose_landmark = None
 
             p1, p2 = detect(results, image)
             cv2.imshow("Camera", image)
 
-            yaw = get_yaw_velocity(p1, p2)
-            fwd = get_forward_velocity(p1, p2)
+            yaw, fwd = controller.control(p1, p2)
+            print(f"Yaw: ({yaw}), Fwd: ({fwd})")
             await fly(yaw, fwd)
 
             key = cv2.waitKey(source.get_delay())
@@ -99,13 +80,25 @@ async def run():
     cv2.waitKey(1)
 
 
-def main(ip):
-    global pilot, source, log
+def get_source(ip, use_simulator):
+    if use_simulator:
+        return SimulatorSource(ip)
+    else:
+        return CameraSource()
+
+def main(ip, use_simulator):
+    global pilot, source, log, controller
     log = utils.make_logger(__name__)
-    source = SimulatorSource(ip)
-    pilot = System(14550)
+    source = get_source(ip, use_simulator)
+    port = 14550 if use_simulator else 15540 # TODO Unclear !!
+    pilot = System(port)
+    controller = Controller(0.5, 2.3)
 
     try:
         asyncio.run(run())
     except asyncio.CancelledError:
         log.warning("Cancel program run")
+    except Exception as e:
+        log.error("Fatal error: " + str(e))
+    finally:
+        controller.plot()

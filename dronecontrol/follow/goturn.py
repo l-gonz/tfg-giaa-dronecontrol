@@ -32,7 +32,7 @@ def show_start_box(x, y, width, height):
 
 
 def main():
-    log = utils.make_logger(__name__)
+    log = utils.make_stdout_logger(__name__)
     source = FileSource("img/easy-follow.avi")
     frame = source.get_frame()
     bbox = cv2.selectROI('Select object', frame, False)

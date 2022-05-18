@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 import cv2
 import numpy as np
 import mediapipe as mp
@@ -43,27 +44,38 @@ async def fly(yaw, fwd):
     await asyncio.sleep(0.1)
 
 
+async def follow_loop(pose):
+    image = source.get_frame()
+    try:
+        results = pose.process(image)
+    except Exception as e:
+        log.error("Image error: " + str(e))
+        results.pose_landmark = None
+
+    p1, p2 = detect(results, image)
+    cv2.imshow("Camera", image)
+
+    yaw, fwd = controller.control(p1, p2)
+    print(f"Yaw: ({yaw}), Fwd: ({fwd})")
+    await fly(yaw, fwd)
+
+    await utils.log_system_info(file_log, pilot, results.pose_landmark)
+
+
 async def run():
-    await pilot.connect()
+    try:
+        await pilot.connect()
+    except asyncio.exceptions.TimeoutError:
+        log.error("Connection time-out")
+        return
+
     await pilot.takeoff()
     await asyncio.sleep(3)
     await pilot.start_offboard()
 
     with mp_pose.Pose() as pose:
         while True:
-            image = source.get_frame()
-            try:
-                results = pose.process(image)
-            except Exception as e:
-                log.error("Image error: " + str(e))
-                results.pose_landmark = None
-
-            p1, p2 = detect(results, image)
-            cv2.imshow("Camera", image)
-
-            yaw, fwd = controller.control(p1, p2)
-            print(f"Yaw: ({yaw}), Fwd: ({fwd})")
-            await fly(yaw, fwd)
+            await follow_loop(pose)
 
             key = cv2.waitKey(source.get_delay())
             if key == ord('q'):
@@ -75,10 +87,6 @@ async def run():
     await pilot.land()
     await asyncio.sleep(3)
 
-    # Clean up
-    source.close()
-    cv2.waitKey(1)
-
 
 def get_source(ip, use_simulator):
     if use_simulator:
@@ -86,11 +94,24 @@ def get_source(ip, use_simulator):
     else:
         return CameraSource()
 
-def main(ip, use_simulator):
-    global pilot, source, log, controller
-    log = utils.make_logger(__name__)
+
+def close_handlers():
+    pilot.close()
+    utils.close_file_logger(file_log)
+
+    source.close()
+    cv2.waitKey(1)
+
+
+def main(ip, use_simulator, log_to_file=False, port=None):
+    global pilot, source, log, controller, file_log
+    log = utils.make_stdout_logger(__name__)
+    file_log = utils.make_file_logger(__name__) if log_to_file else None
+
+    if use_simulator and not ip:
+        ip = utils.get_wsl_host_ip()
+
     source = get_source(ip, use_simulator)
-    port = 14550 if use_simulator else 15540 # TODO Unclear !!
     pilot = System(port)
     controller = Controller(0.5, 2.3)
 
@@ -98,7 +119,10 @@ def main(ip, use_simulator):
         asyncio.run(run())
     except asyncio.CancelledError:
         log.warning("Cancel program run")
-    except Exception as e:
-        log.error("Fatal error: " + str(e))
-    finally:
-        controller.plot()
+    except KeyboardInterrupt:
+        log.warning("Cancelled with KeyboardInterrupt")
+    except:
+        traceback.print_exc()
+        
+    controller.plot()
+    close_handlers()

@@ -28,12 +28,17 @@ class System():
 
 
     def __init__(self, port=None, use_serial=False):
+        self.is_ready = False
         self.is_offboard = False
         self.actions = [] # type: typing.List[Action]
         self.port = port or self.DEFAULT_UDP_PORT
         self.serial = self.DEFAULT_SERIAL_ADDRESS if use_serial else None
         self.mav = mavsdk.System()
-        self.log = utils.make_logger(__name__)
+        self.log = utils.make_stdout_logger(__name__)
+
+
+    def close(self):
+        del self.mav
 
 
     async def start(self):
@@ -109,6 +114,7 @@ class System():
                 self.log.debug("Global position estimate ok")
                 break
         self.log.info("System ready")
+        self.is_ready = True
 
 
     async def return_home(self):
@@ -127,7 +133,7 @@ class System():
         """Takeoff.
         
         Finishes when the system arrives at the minimum takeoff altitude."""
-        if await self.__get_landed_state() != LandedState.ON_GROUND:
+        if await self.get_landed_state() != LandedState.ON_GROUND:
             self.log.warning("Cannot take-off, not on ground")
             return
             
@@ -153,7 +159,7 @@ class System():
 
     async def start_offboard(self):
         """Start offboard mode where the system's movement can be directly controlled."""
-        if await self.__get_landed_state() == LandedState.ON_GROUND:
+        if await self.get_landed_state() == LandedState.ON_GROUND:
             self.log.warning("Cannot start offboard mode while drone is on the ground")
             return
 
@@ -192,6 +198,28 @@ class System():
             VelocityBodyYawspeed(forward, right, -up, yaw))
 
 
+    async def get_position(self):
+        return await System.get_async_generated(self.mav.telemetry.position())
+
+
+    async def get_attitude(self):
+        return await System.get_async_generated(self.mav.telemetry.attitude_euler())
+
+
+    async def get_velocity(self):
+        return await System.get_async_generated(self.mav.telemetry.attitude_angular_velocity_body())
+
+
+    async def get_landed_state(self):
+        """Return current system landed state"""
+        return await System.get_async_generated(self.mav.telemetry.landed_state())
+
+
+    async def get_flight_mode(self):
+        """Return current system landed state"""
+        return await System.get_async_generated(self.mav.telemetry.flight_mode())
+
+
     async def __landing_finished(self):
         """Runs until the drone has finished landing."""
         await self.__wait_for_landed_state(LandedState.ON_GROUND)
@@ -199,12 +227,6 @@ class System():
             if not armed:
                 self.log.info("Landing complete")
                 break
-
-    
-    async def __get_landed_state(self):
-        """Return current system landed state"""
-        async for state in self.mav.telemetry.landed_state():
-            return state
     
 
     async def __wait_for_landed_state(self, state):

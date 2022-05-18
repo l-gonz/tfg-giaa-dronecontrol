@@ -2,6 +2,7 @@ import time
 import typing
 import cv2
 import os
+from datetime import datetime
 import mediapipe.python.solutions.hands as mp_hands
 import mediapipe.python.solutions.drawing_utils as mp_drawing
 import mediapipe.python.solutions.hands_connections as mp_connections
@@ -28,9 +29,9 @@ class HandGui():
     HEIGHT = 480
     
 
-    def __init__(self, file=None, max_num_hands=1):
+    def __init__(self, file=None, max_num_hands=1, log_video=False):
 
-        self.log = utils.make_logger(__name__)
+        self.log = utils.make_stdout_logger(__name__)
         self.__gesture_event_handler = []
         self.__current_time = 0
         self.__past_time = 0
@@ -43,14 +44,25 @@ class HandGui():
         self.__source = HandGui.__get_source(file)
         self.img = VideoSource.get_blank()
 
+        self.__video_writer = None
+        if log_video:
+            self.__video_writer = cv2.VideoWriter(f"img/video_{__name__}_{datetime.now():%d%m%y%H%M%S}.mp4", 
+                cv2.VideoWriter_fourcc('M','J','P','G'), 30, self.__source.get_size())
+
 
     def close(self):
+        cv2.waitKey(1)
         self.__source.close()
+
+        if self.__video_writer:
+            self.__video_writer.release()
 
 
     def capture(self):
         """Capture image from webcam and extract hand gesture."""
         self.img = self.__source.get_frame()
+        if self.__video_writer:
+            self.__video_writer.write(self.img)
 
         results = self.get_landmarks()
         self.hand_landmarks = results.multi_hand_landmarks
@@ -109,6 +121,10 @@ class HandGui():
             img = self.img
         rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return self.hand_model.process(rgb_img)
+
+
+    def get_current_gesture(self):
+        return self.__past_gesture
 
 
     @staticmethod

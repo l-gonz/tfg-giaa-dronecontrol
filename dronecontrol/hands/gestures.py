@@ -38,7 +38,7 @@ class Detector():
     EXTENDED_FINGER_THRESHOLD = 50
 
     def __init__(self, hands_landmarks):
-        self.log = utils.make_logger(__name__)
+        self.log = utils.make_stdout_logger(__name__)
         self.hands = hands_landmarks
         if self.hands != None:
             self.__process_hand()

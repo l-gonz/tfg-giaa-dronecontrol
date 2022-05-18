@@ -1,10 +1,14 @@
+import os
 import logging
+from datetime import datetime
+from dronecontrol.common import pilot
 
 
 LOGGING_FORMAT = '%(levelname)s:%(name)s: %(message)s'
+SYSTEM_INFO_FORMATTER = '%(asctime)s,%(message)s'
 
 
-def make_logger(name: str, level=logging.INFO) -> logging.Logger:
+def make_stdout_logger(name: str, level=logging.INFO) -> logging.Logger:
     """Return a dedicated logger for a module."""
     log = logging.getLogger(name)
     log.setLevel(level)
@@ -12,3 +16,57 @@ def make_logger(name: str, level=logging.INFO) -> logging.Logger:
     handler.setFormatter(logging.Formatter(LOGGING_FORMAT))
     log.addHandler(handler)
     return log
+
+
+def make_file_logger(name: str, level=logging.INFO, for_system_info=True) -> logging.Logger:
+    """Return a logger that outputs to a file"""
+    log = logging.getLogger(name + "_file")
+    log.setLevel(level)
+    handler = logging.FileHandler(f"log_{name}_{datetime.now():%d%m%y%H%M%S}")
+    handler.setFormatter(logging.Formatter(SYSTEM_INFO_FORMATTER if for_system_info else LOGGING_FORMAT))
+    log.addHandler(handler)
+
+    if for_system_info:
+        with open(handler.baseFilename, 'w') as file:
+            file.write("date,landed_state,flight_mode,position,attitude,velocity,image_info")
+    return log
+
+
+def close_file_logger(logger: logging.Logger):
+    if logger is None:
+        return
+
+    handlers = logger.handlers[:]
+    for handler in handlers:
+        logger.removeHandler(handler)
+        handler.close()
+
+
+async def log_system_info(log: logging.Logger, pilot: pilot.System, tracking_info: str):
+    if log is None:
+        return
+
+    if not pilot.is_ready:
+        log.info('%s,%s,%s,%s,%s,%s', "N/A", "N/A", "N/A", "N/A", "N/A", str(tracking_info))
+        return
+
+    landed_state = str(await pilot.get_landed_state())
+    flight_mode = str(await pilot.get_flight_mode())
+    position = str(await pilot.get_position())
+    attitude = str(await pilot.get_attitude())
+    velocity = str(await pilot.get_velocity())
+
+    log.info('%s,%s,%s,%s,%s,%s', landed_state, flight_mode, position, attitude, velocity, tracking_info)
+
+
+def get_wsl_host_ip():
+    ip = ""
+    if not os.path.exists("/etc/resolv.conf"):
+        return ip
+
+    with open("/etc/resolv.conf") as file:
+        for line in file:
+            if "nameserver" in line:
+                ip = line.split()[-1]
+                break
+    return ip

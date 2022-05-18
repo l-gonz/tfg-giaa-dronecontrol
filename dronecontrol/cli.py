@@ -4,7 +4,9 @@ from dronecontrol.follow import start as follow_entry
 from dronecontrol.hands import mapper as hands_entry
 
 
-@click.group()
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+@click.group(context_settings=CONTEXT_SETTINGS)
 def main():
     pass
 
@@ -13,15 +15,17 @@ def main():
 @click.option("--udp", "serial", flag_value=False, default=True, help="connect to drone system through UDP, default address is localhost")
 @click.option("--serial", "serial", flag_value=True, help="connect to drone system through serial, default device is ttyUSB0")
 @click.option("-f", "--file", type=click.Path(exists=True, readable=True), help="file to use as source instead of the camera")
-def hand(port, serial, file):
+@click.option("-l", "--log", is_flag=True, help="log important info and save video")
+def hand(port, serial, file, log):
     print(f"Port: {port}, serial: {serial}, file: {file}")
-    hands_entry.main(port, serial, file)
+    hands_entry.main(port, serial, file, log)
 
 @main.command()
-@click.option("--ip", type=str, default=None, help="simulator IP address")
+@click.option("--ip", type=str, default="", help="simulator IP address")
 @click.option("--sim/--no-sim", "use_simulator", default=True, help="run with AirSim as video source (default True)")
-def follow(ip, use_simulator):
-    follow_entry.main(ip, use_simulator)
+@click.option("-l", "--log", is_flag=True, help="log important info and save video")
+def follow(ip, use_simulator, log):
+    follow_entry.main(ip, use_simulator, log)
 
 @main.group()
 def tools():

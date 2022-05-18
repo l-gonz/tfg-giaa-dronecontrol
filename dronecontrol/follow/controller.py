@@ -42,6 +42,9 @@ class Controller:
 
 
     def plot(self):
+        if len(self._time_list) == 0:
+            return
+
         plt.plot(self._time_list, self._feedback_list)
         plt.plot(self._time_list, self._setpoint_list)
         plt.plot(self._time_list, self._output_list)
@@ -80,6 +83,10 @@ class Controller:
         clipped = np.clip(output, -self.MAX_FWD_VEL, self.MAX_FWD_VEL)
         return clipped
 
+
+##########################################################
+###################  TEST  ###############################
+##########################################################
 
 def get_points(i):
     center_p1, center_p2 = np.array([0.47568006, 0.50746589]), np.array([0.53723093, 0.86524118])

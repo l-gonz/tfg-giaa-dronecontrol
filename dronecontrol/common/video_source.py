@@ -28,6 +28,10 @@ class VideoSource(ABC):
     def get_size(self):
         pass
 
+    @abstractmethod
+    def close(self):
+        pass
+
     @staticmethod
     def get_blank():
         return numpy.zeros((HEIGHT, WIDTH, 3), numpy.uint8)
@@ -48,12 +52,13 @@ class CameraSource(VideoSource):
         success, img = self.__source.read()
         if not success:
             img = CameraSource.get_blank()
-            raise VideoSourceEmpty("Cannot access camera")
-
-        img = cv2.flip(img, 1)
+        else:
+            img = cv2.flip(img, 1)
         return img
 
     def get_size(self):
+        if not self.__source.isOpened():
+            return WIDTH, HEIGHT
         return int(self.__source.get(3)), int(self.__source.get(4))
 
     def close(self):
@@ -105,7 +110,7 @@ class SimulatorSource(VideoSource):
         return image_bytes.reshape(image.height, image.width, 3)
 
     def get_size(self):
-        return (0, 0)
+        return (1280, 800)
 
     def get_delay(self):
         return int(1000/60)

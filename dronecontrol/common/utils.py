@@ -1,6 +1,8 @@
 import os
 import logging
 from datetime import datetime
+
+from dronecontrol import tools
 from dronecontrol.common import pilot
 
 
@@ -70,3 +72,26 @@ def get_wsl_host_ip():
                 ip = line.split()[-1]
                 break
     return ip
+
+
+def keyboard_control(key: int):
+    if key < 0:
+        return None
+
+    print(f"Pressed {chr(key)}")
+    if key == ord('q'): # Quit
+        raise KeyboardInterrupt
+    elif key == ord('k'): # Kill switch
+        return pilot.System.kill_engines
+    elif key == ord('s'): # Stop
+        return pilot.System.set_velocity
+    elif key == ord('t'): # Take-off
+        return pilot.System.takeoff
+    elif key == ord('l'): # Land
+        return pilot.System.land
+    elif key == ord(' '): # Take picture / start video
+        return tools.VideoCamera.trigger
+    elif key == ord('<'): # Picture <> video
+        return tools.VideoCamera.change_mode
+    else:
+        logging.getLogger(__name__).warning(f"Key {chr(key)} is not bound to any action.")

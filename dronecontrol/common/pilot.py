@@ -117,6 +117,10 @@ class System():
         self.is_ready = True
 
 
+    async def kill_engines(self):
+        await self.mav.action.kill()
+
+
     async def return_home(self):
         """Return to home position and land."""
         if self.is_offboard:

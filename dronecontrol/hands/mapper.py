@@ -33,15 +33,14 @@ async def run_gui(gui):
     the image and render it.
     
     Return whether the loop should continue."""
-    log.info("GUI loop")
+
     try:
         gui.capture()
-    except Exception:
-        log.error("Fatal error: cannot capture image")
-        return False
-
-    key = gui.render()
-    if key == ord('q'):
+        key_action = utils.keyboard_control(gui.render())
+        if key_action:
+            system.queue_action(key_action, interrupt=True)  
+    except Exception as e:
+        log.error(e)
         return False
 
     await asyncio.sleep(0.01)

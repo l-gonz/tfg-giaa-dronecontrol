@@ -35,9 +35,10 @@ def tools():
 @click.option("-s", "--sim", "use_simulator", is_flag=True, help="attach to a simulator through UDP")
 @click.option("-h", "--hardware", "use_hardware", is_flag=True, help="attach to a hardware drone through serial")
 @click.option("-w", "--wsl", "use_wsl", is_flag=True, help="attach to a hardware drone through serial")
+@click.option("-rs", "--realsense", "use_realsense", is_flag=True, help="attach to a hardware drone through serial")
 # @click.option("--address", help="address to attach to, default for UDP is localhost and for serial ttyUSB0")
-def test_camera(use_simulator, use_hardware, use_wsl):
-    tools_module.test_camera(use_simulator, use_hardware, use_wsl)
+def test_camera(use_simulator, use_hardware, use_wsl, use_realsense):
+    tools_module.test_camera(use_simulator, use_hardware, use_wsl, use_realsense)
 
 if __name__ == "__main__":
     main()

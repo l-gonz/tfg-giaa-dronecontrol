@@ -1,7 +1,10 @@
-from abc import ABC, abstractmethod
 import numpy
 import cv2
 import airsim
+import pyrealsense2
+
+from abc import ABC, abstractmethod
+from math import tan, pi
 
 from dronecontrol.common import utils
 
@@ -20,21 +23,18 @@ class VideoSource(ABC):
     def get_delay(self):
         return 1
 
-    @abstractmethod
     def get_frame(self):
-        return VideoSource.get_blank()
+        return self.get_blank()
 
-    @abstractmethod
     def get_size(self):
-        pass
+        return WIDTH, HEIGHT
+
+    def get_blank(self):
+        return numpy.zeros((self.get_size()[1], self.get_size()[0], 3), numpy.uint8)
 
     @abstractmethod
     def close(self):
         pass
-
-    @staticmethod
-    def get_blank():
-        return numpy.zeros((HEIGHT, WIDTH, 3), numpy.uint8)
 
 
 class CameraSource(VideoSource):
@@ -51,7 +51,7 @@ class CameraSource(VideoSource):
     def get_frame(self):
         success, img = self.__source.read()
         if not success:
-            img = CameraSource.get_blank()
+            img = self.get_blank()
         else:
             img = cv2.flip(img, 1)
         return img
@@ -80,7 +80,7 @@ class FileSource(VideoSource):
 
         success, img = self.__source.read()
         if not success:
-            img = CameraSource.get_blank()
+            img = self.get_blank()
             self.close()
             raise VideoSourceEmpty("Video file finished")
 
@@ -117,3 +117,82 @@ class SimulatorSource(VideoSource):
 
     def close(self):
         cv2.destroyAllWindows()
+
+
+class RealSenseCameraSource(VideoSource):
+    def __init__(self):
+        super().__init__()
+        self.pipeline = pyrealsense2.pipeline()
+        config = pyrealsense2.config()
+        self.pipeline.start(config, self.callback)
+        self.image_data = None
+        self.valid_data = False
+
+        self.calculate_rectify()
+        
+
+    def get_frame(self):
+        if self.image_data is None or not self.valid_data:
+            return self.get_blank()
+        
+        self.valid_data = False
+        center_undistorted = cv2.remap(src = self.image_data.copy(),
+            map1 = self.undistort_rectify[0],
+            map2 = self.undistort_rectify[1],
+            interpolation = cv2.INTER_LINEAR)
+        color_image = cv2.cvtColor(center_undistorted[:,self.max_disp:], cv2.COLOR_GRAY2RGB)
+        return color_image
+
+    def get_size(self):
+        return (848, 800)
+
+    def close(self):
+        self.pipeline.stop()
+
+    def callback(self, frame):
+        if frame.is_frameset():
+            frameset = frame.as_frameset()
+            f1 = frameset.get_fisheye_frame(1).as_video_frame()
+            self.image_data = numpy.asanyarray(f1.get_data())
+            self.valid_data = True
+
+    def calculate_rectify(self):
+        min_disp = 0
+        num_disp = 112 - min_disp
+        self.max_disp = min_disp + num_disp
+
+        profiles = self.pipeline.get_active_profile()
+        streams = profiles.get_stream(pyrealsense2.stream.fisheye, 1).as_video_stream_profile()
+        intrinsics = streams.get_intrinsics()
+
+        stereo_fov_rad = 90 * (pi/180)  # 90 degree desired fov
+        stereo_height_px = 300          # 300x300 pixel stereo output
+        stereo_focal_px = stereo_height_px/2 / tan(stereo_fov_rad/2)
+        stereo_width_px = stereo_height_px + self.max_disp
+        stereo_size = (stereo_width_px, stereo_height_px)
+        stereo_cx = (stereo_height_px - 1)/2 + self.max_disp
+        stereo_cy = (stereo_height_px - 1)/2
+
+        K_left = RealSenseCameraSource.camera_matrix(intrinsics)
+        D_left = RealSenseCameraSource.fisheye_distortion(intrinsics)
+        R_left = numpy.eye(3)
+        P_left = numpy.array([[stereo_focal_px, 0, stereo_cx, 0],
+                       [0, stereo_focal_px, stereo_cy, 0],
+                       [0,               0,         1, 0]])
+        self.undistort_rectify = cv2.fisheye.initUndistortRectifyMap(K_left, 
+            D_left, R_left, P_left, stereo_size, cv2.CV_32FC1)
+
+    def get_extrinsics(src, dst):
+        extrinsics = src.get_extrinsics_to(dst)
+        R = numpy.reshape(extrinsics.rotation, [3,3]).T
+        T = numpy.array(extrinsics.translation)
+        return (R, T)
+
+    def camera_matrix(intrinsics):
+        return numpy.array([[intrinsics.fx,             0, intrinsics.ppx],
+                        [            0, intrinsics.fy, intrinsics.ppy],
+                        [            0,             0,              1]])
+
+    def fisheye_distortion(intrinsics):
+        return numpy.array(intrinsics.coeffs[:4])
+

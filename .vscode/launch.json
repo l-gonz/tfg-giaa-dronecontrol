@@ -33,6 +33,18 @@
             "args": [
                 "follow"
             ]
+        },
+        {
+            "name": "Python Video",
+            "type": "python",
+            "request": "launch",
+            "module": "dronecontrol",
+            "justMyCode": true,
+            "args": [
+                "tools",
+                "test-camera",
+                "-rs"
+            ]
         }
     ]
 }

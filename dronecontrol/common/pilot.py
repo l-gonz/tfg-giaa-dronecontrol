@@ -27,11 +27,12 @@ class System():
     TIMEOUT = 15
 
 
-    def __init__(self, port=None, use_serial=False):
+    def __init__(self, ip=None, port=None, use_serial=False):
         self.is_ready = False
         self.is_offboard = False
         self.actions = [] # type: typing.List[Action]
         self.port = port or self.DEFAULT_UDP_PORT
+        self.ip = ip
         self.serial = self.DEFAULT_SERIAL_ADDRESS if use_serial else None
         self.mav = mavsdk.System()
         self.log = utils.make_stdout_logger(__name__)
@@ -99,7 +100,7 @@ class System():
         """Connect to mavsdk server."""
         # Triggers TimeoutError if it can't connect
         
-        address = f"serial:///dev/{self.serial}" if self.serial else f"udp://:{self.port}"
+        address = f"serial:///dev/{self.serial}" if self.serial else f"udp://{self.ip if self.ip else ''}:{self.port}"
         self.log.info("Waiting for drone to connect on address " + address)
         await asyncio.wait_for(self.mav.connect(system_address=address), timeout=self.TIMEOUT)
 

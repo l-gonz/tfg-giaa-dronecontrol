@@ -78,10 +78,14 @@ async def run():
             await follow_loop(pose)
 
             key = cv2.waitKey(source.get_delay())
-            if key == ord('q'):
+            try:
+                key_action = utils.keyboard_control(key)
+            except KeyboardInterrupt:
                 break
+            if pilot.System.__name__ in key_action.__qualname__:
+                await key_action(pilot)
             elif key == ord('r'):
-                pose.process(CameraSource.get_blank())
+                pose.process(self.get_blank())
 
     await pilot.stop_offboard()
     await pilot.land()
@@ -112,7 +116,7 @@ def main(ip, use_simulator, log_to_file=False, port=None):
         ip = utils.get_wsl_host_ip()
 
     source = get_source(ip, use_simulator)
-    pilot = System(port)
+    pilot = System(ip, port)
     controller = Controller(0.5, 2.3)
 
     try:

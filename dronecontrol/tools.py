@@ -6,7 +6,7 @@ import asyncio
 from enum import Enum
 
 from dronecontrol.common import utils, pilot
-from dronecontrol.common.video_source import CameraSource, SimulatorSource
+from dronecontrol.common.video_source import CameraSource, SimulatorSource, RealSenseCameraSource
 
 class CameraMode(Enum):
     PICTURE = 0
@@ -16,7 +16,7 @@ class VideoCamera:
     IMAGE_FOLDER = 'img'
     VIDEO_CODE = cv2.VideoWriter_fourcc('M','J','P','G')
 
-    def __init__(self, use_simulator, use_hardware, use_wsl) -> None:
+    def __init__(self, use_simulator, use_hardware, use_wsl, use_realsense) -> None:
         self.log = utils.make_stdout_logger(__name__)
         self.pilot = None
         if use_simulator or use_hardware:
@@ -24,6 +24,8 @@ class VideoCamera:
 
         if use_simulator and use_wsl:
             self.source = SimulatorSource(utils.get_wsl_host_ip())
+        elif use_realsense:
+            self.source = RealSenseCameraSource()
         else:
             self.source = CameraSource()
         self.img = self.source.get_blank()
@@ -34,7 +36,7 @@ class VideoCamera:
         
 
     async def run(self):
-        self.pilot_task = asyncio.create_task(self.pilot.start())
+        pilot_task = asyncio.create_task(self.pilot.start()) if self.pilot else None
         
         while True:
             self.img = self.source.get_frame()
@@ -53,7 +55,7 @@ class VideoCamera:
             if self.is_recording:
                 self.out.write(self.img)
             
-            if self.pilot_task.done():
+            if pilot_task and pilot_task.done():
                 break
             
             cv2.putText(self.img, f"Mode {self.mode}: {'' if self.is_recording else 'not '} recording",
@@ -61,9 +63,10 @@ class VideoCamera:
             cv2.imshow("Image", self.img)
             await asyncio.sleep(1 / 30)
 
-        if not self.pilot_task.done():
-            self.pilot_task.cancel()
-        await self.pilot_task
+        if pilot_task:
+            if not pilot_task.done():
+                pilot_task.cancel()
+            await pilot_task
 
         
     def close(self):
@@ -71,7 +74,8 @@ class VideoCamera:
         if self.out:
             self.out.release()
         self.source.close()
-        self.pilot.close()
+        if self.pilot:
+            self.pilot.close()
 
 
     def change_mode(self):
@@ -115,9 +119,9 @@ class VideoCamera:
 
 
 
-def test_camera(use_simulator, use_hardware, use_wsl):
+def test_camera(use_simulator, use_hardware, use_wsl, use_realsense):
     log = utils.make_stdout_logger(__name__)
-    camera = VideoCamera(use_simulator, use_hardware, use_wsl)
+    camera = VideoCamera(use_simulator, use_hardware, use_wsl, use_realsense)
     try:
         asyncio.run(camera.run())
     except asyncio.CancelledError:

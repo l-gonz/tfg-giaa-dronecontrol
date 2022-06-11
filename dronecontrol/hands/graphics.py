@@ -9,7 +9,7 @@ import mediapipe.python.solutions.hands_connections as mp_connections
 
 from dronecontrol.common import utils
 from dronecontrol.hands import gestures
-from dronecontrol.common.video_source import CameraSource, FileSource, VideoSource
+from dronecontrol.common.video_source import *
 
 class Color():
     """Define color constants to use with cv2."""
@@ -42,7 +42,7 @@ class HandGui():
         self.hand_model = mp_hands.Hands(max_num_hands=max_num_hands)
 
         self.__source = HandGui.__get_source(file)
-        self.img = VideoSource.get_blank()
+        self.img = self.__source.get_blank()
 
         self.__video_writer = None
         if log_video:
@@ -173,3 +173,13 @@ class HandGui():
             return (10, self.HEIGHT - 10)
         if channel == 2:
             return (10, self.HEIGHT - 50)
+
+
+if __name__ == "__main__":
+    gui = HandGui()
+    while True:
+        gui.capture()
+        if gui.render() > 0:
+            break
+    
+    gui.close()

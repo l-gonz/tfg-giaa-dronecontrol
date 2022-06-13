@@ -33,12 +33,14 @@ def tools():
 
 @tools.command()
 @click.option("-s", "--sim", "use_simulator", is_flag=True, help="attach to a simulator through UDP")
-@click.option("-h", "--hardware", "use_hardware", is_flag=True, help="attach to a hardware drone through serial")
-@click.option("-w", "--wsl", "use_wsl", is_flag=True, help="attach to a hardware drone through serial")
-@click.option("-rs", "--realsense", "use_realsense", is_flag=True, help="attach to a hardware drone through serial")
+@click.option("-r", "--hardware", "use_hardware", is_flag=True, help="attach to a hardware drone through serial")
+@click.option("-w", "--wsl", "use_wsl", is_flag=True, help="expects the program to run on a Linux WSL OS")
+@click.option("-rs", "--realsense", "use_realsense", is_flag=True, help="use a RealSense camera as source")
+@click.option("-h", "--hand-detection", "use_hands", is_flag=True, help="use hand detection for image processing")
+@click.option("-p", "--pose-detection", "use_pose", is_flag=True, help="use pose detection for image processing")
 # @click.option("--address", help="address to attach to, default for UDP is localhost and for serial ttyUSB0")
-def test_camera(use_simulator, use_hardware, use_wsl, use_realsense):
-    tools_module.test_camera(use_simulator, use_hardware, use_wsl, use_realsense)
+def test_camera(use_simulator, use_hardware, use_wsl, use_realsense, use_hands, use_pose):
+    tools_module.test_camera(use_simulator, use_hardware, use_wsl, use_realsense, use_hands, use_pose)
 
 if __name__ == "__main__":
     main()

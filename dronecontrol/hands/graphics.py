@@ -29,7 +29,7 @@ class HandGui():
     HEIGHT = 480
     
 
-    def __init__(self, file=None, max_num_hands=1, log_video=False):
+    def __init__(self, file=None, max_num_hands=1, log_video=False, source=None):
 
         self.log = utils.make_stdout_logger(__name__)
         self.__gesture_event_handler = []
@@ -41,7 +41,7 @@ class HandGui():
         self.hand_landmarks = None
         self.hand_model = mp_hands.Hands(max_num_hands=max_num_hands)
 
-        self.__source = HandGui.__get_source(file)
+        self.__source = source if source else HandGui.__get_source(file)
         self.img = self.__source.get_blank()
 
         self.__video_writer = None

@@ -147,7 +147,10 @@ class RealSenseCameraSource(VideoSource):
         return (848, 800)
 
     def close(self):
-        self.pipeline.stop()
+        try:
+            self.pipeline.stop()
+        except RuntimeError as e:
+            self.log.error(e)
 
     def callback(self, frame):
         if frame.is_frameset():
@@ -195,4 +198,3 @@ class RealSenseCameraSource(VideoSource):
 
     def fisheye_distortion(intrinsics):
         return numpy.array(intrinsics.coeffs[:4])
-

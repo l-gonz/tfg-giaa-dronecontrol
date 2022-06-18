@@ -33,7 +33,7 @@ class VideoCamera:
         if use_simulator or use_hardware:
             self.pilot = pilot.System(use_serial=use_hardware)
 
-        if use_simulator and use_wsl:
+        if use_simulator or use_wsl:
             self.source = SimulatorSource(utils.get_wsl_host_ip())
         elif use_realsense:
             self.source = RealSenseCameraSource()

@@ -33,7 +33,7 @@ cd $PX4
 DONT_RUN=1 make px4_sitl_default none_iris 
 
 # WSL (happens automatically if using ./simulator.sh --airsim)
-# export PX4_SIM_HOST_ADDR=172.25.48.1
+# export PX4_SIM_HOST_ADDR=<windows host ip on WSL network>
 
 # Dronecontrol
 python3 -m venv venv

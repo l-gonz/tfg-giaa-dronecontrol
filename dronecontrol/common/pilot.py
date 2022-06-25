@@ -22,18 +22,26 @@ class System():
     """
     STOP_VELOCITY = VelocityBodyYawspeed(0.0, 0.0, 0.0, 0.0)
     WAIT_TIME = 0.05
-    DEFAULT_SERIAL_ADDRESS = "ttyUSB0"
+    DEFAULT_SERIAL_ADDRESS = "/dev/ttyUSB0"
     DEFAULT_UDP_PORT = 14540
     TIMEOUT = 15
 
 
-    def __init__(self, ip=None, port=None, use_serial=False):
+    def __init__(self, ip=None, port=None, use_serial=False, serial_address=None):
+        """
+        Connection parameters to PX4 through MAVlink
+
+        Example serial addresses:
+            - Linux with default baudrate: '/dev/ttyUSB0'
+            - Windows over telemetry radio: 'COM10:57600'
+            - RPi UART over serial cable: '/dev/serial0:921600'
+        """
         self.is_ready = False
         self.is_offboard = False
         self.actions = [] # type: typing.List[Action]
         self.port = port or self.DEFAULT_UDP_PORT
         self.ip = ip
-        self.serial = self.DEFAULT_SERIAL_ADDRESS if use_serial else None
+        self.serial = (serial_address if serial_address else self.DEFAULT_SERIAL_ADDRESS) if use_serial else None
         self.mav = mavsdk.System()
         self.log = utils.make_stdout_logger(__name__)
 
@@ -100,7 +108,10 @@ class System():
         """Connect to mavsdk server."""
         # Triggers TimeoutError if it can't connect
         
-        address = f"serial:///dev/{self.serial}" if self.serial else f"udp://{self.ip if self.ip else ''}:{self.port}"
+        if self.serial:
+            address = f"serial://{self.serial}"
+        else:
+            address = f"udp://{self.ip if self.ip else ''}:{self.port}"
         self.log.info("Waiting for drone to connect on address " + address)
         await asyncio.wait_for(self.mav.connect(system_address=address), timeout=self.TIMEOUT)
 
@@ -249,11 +260,21 @@ class System():
 
 
 async def test():
-    drone = System(port=14550)
-    await drone.connect()
+    drone = System(use_serial=True)
+    await drone.mav.connect(system_address="serial:///dev/serial0:921600")  ### Serial - UART RPi
+    # await drone.connect(system_address="serial:///dev/ttyUSB0:57600")  ### Telemetry RPi
+    async for state in drone.mav.core.connection_state():
+        if state.is_connected:
+            print("Drone discovered!")
+            break
+
+    # await drone.connect()
     print(await System.get_async_generated(drone.mav.telemetry.position()))
-    print(await drone.mav.param.get_param_int("COM_RCL_EXCEPT"))
+    # print(await drone.mav.param.get_param_int("COM_RCL_EXCEPT"))
     await asyncio.sleep(1)
+    await drone.takeoff()
+    await asyncio.sleep(3)
+    await drone.land()
 
 
 if __name__ == "__main__":

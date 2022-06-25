@@ -27,16 +27,17 @@ class VideoCamera:
     IMAGE_FOLDER = 'img'
     VIDEO_CODE = cv2.VideoWriter_fourcc('M','J','P','G')
 
-    def __init__(self, use_simulator, use_hardware, use_wsl, use_realsense, image_detection) -> None:
+    def __init__(self, use_simulator, use_hardware, use_wsl, use_realsense, 
+                 image_detection, hardware_address=None, simulator_ip=None):
         self.log = utils.make_stdout_logger(__name__)
         self.pilot = None
         if use_simulator or use_hardware:
-            self.pilot = pilot.System(use_serial=use_hardware)
+            self.pilot = pilot.System(use_serial=use_hardware, serial_address=hardware_address)
 
-        if use_simulator or use_wsl:
-            self.source = SimulatorSource(utils.get_wsl_host_ip())
-        elif use_realsense:
+        if use_realsense:
             self.source = RealSenseCameraSource()
+        elif use_simulator:
+            self.source = SimulatorSource(utils.get_wsl_host_ip() if use_wsl else simulator_ip if simulator_ip else "")
         else:
             self.source = CameraSource()
         self.img = self.source.get_blank()
@@ -149,10 +150,11 @@ class VideoCamera:
 
 
 
-def test_camera(use_simulator, use_hardware, use_wsl, use_realsense, use_hands, use_pose):
+def test_camera(use_simulator, use_hardware, use_wsl, use_realsense, use_hands, use_pose,
+                hardware_address=None, simulator_ip=None):
     log = utils.make_stdout_logger(__name__)
     detection = ImageDetection.HAND if use_hands else (ImageDetection.POSE if use_pose else ImageDetection.NONE)
-    camera = VideoCamera(use_simulator, use_hardware, use_wsl, use_realsense, detection)
+    camera = VideoCamera(use_simulator, use_hardware, use_wsl, use_realsense, detection, hardware_address, simulator_ip)
     try:
         asyncio.run(camera.run())
     except asyncio.CancelledError:

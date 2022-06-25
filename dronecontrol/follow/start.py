@@ -50,7 +50,7 @@ async def follow_loop(pose):
         results = pose.process(image)
     except Exception as e:
         log.error("Image error: " + str(e))
-        results.pose_landmark = None
+        results.pose_landmarks = None
 
     p1, p2 = detect(results, image)
     cv2.imshow("Camera", image)
@@ -59,7 +59,7 @@ async def follow_loop(pose):
     print(f"Yaw: ({yaw}), Fwd: ({fwd})")
     await fly(yaw, fwd)
 
-    await utils.log_system_info(file_log, pilot, results.pose_landmark)
+    await utils.log_system_info(file_log, pilot, results.pose_landmarks)
 
 
 async def run():
@@ -82,10 +82,11 @@ async def run():
                 key_action = utils.keyboard_control(key)
             except KeyboardInterrupt:
                 break
-            if pilot.System.__name__ in key_action.__qualname__:
-                await key_action(pilot)
-            elif key == ord('r'):
-                pose.process(self.get_blank())
+            if key_action:
+                if System.__name__ in key_action.__qualname__:
+                    await key_action(pilot)
+                elif key == ord('r'):
+                    pose.process(self.get_blank())
 
     await pilot.stop_offboard()
     await pilot.land()
@@ -107,7 +108,7 @@ def close_handlers():
     cv2.waitKey(1)
 
 
-def main(ip, use_simulator, log_to_file=False, port=None):
+def main(ip, use_simulator, serial=None, log_to_file=False, port=None):
     global pilot, source, log, controller, file_log
     log = utils.make_stdout_logger(__name__)
     file_log = utils.make_file_logger(__name__) if log_to_file else None
@@ -116,7 +117,7 @@ def main(ip, use_simulator, log_to_file=False, port=None):
         ip = utils.get_wsl_host_ip()
 
     source = get_source(ip, use_simulator)
-    pilot = System(ip, port)
+    pilot = System(ip, port, serial is not None, serial)
     controller = Controller(0.5, 2.3)
 
     try:

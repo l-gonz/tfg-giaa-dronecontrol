@@ -95,7 +95,7 @@ def main(port=None, serial=None, video_file=None, log_to_file=False):
     log = utils.make_stdout_logger(__name__)
     file_log = utils.make_file_logger(__name__) if log_to_file else None
 
-    system = System(port, serial)
+    system = System(port=port, use_serial=serial is not None, serial_address=serial)
     gui = graphics.HandGui(video_file, log_video=log_to_file and not video_file)
 
     try:

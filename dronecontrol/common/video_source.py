@@ -1,12 +1,16 @@
 import numpy
 import cv2
 import airsim
-import pyrealsense2
 
 from abc import ABC, abstractmethod
 from math import tan, pi
 
 from dronecontrol.common import utils
+
+try:
+    import pyrealsense2
+except:
+    print("No pyrealsense2 detected, Real Sense SDK will not be available")
 
 WIDTH = 640
 HEIGHT = 480
@@ -122,7 +126,10 @@ class SimulatorSource(VideoSource):
 class RealSenseCameraSource(VideoSource):
     def __init__(self):
         super().__init__()
-        self.pipeline = pyrealsense2.pipeline()
+        try:
+            self.pipeline = pyrealsense2.pipeline()
+        except NameError:
+            raise NotImplementedError("Attempted to use RealSense source in a system without Real Sense SDK")
         config = pyrealsense2.config()
         self.pipeline.start(config, self.callback)
         self.image_data = None

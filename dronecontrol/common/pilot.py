@@ -133,6 +133,15 @@ class System():
         await self.mav.action.kill()
 
 
+    async def abort(self):
+        await self.stop_offboard()
+        try:
+            await self.mav.action.hold()
+        except Exception as e:
+            log.error(e)
+            await self.return_home()
+
+
     async def return_home(self):
         """Return to home position and land."""
         if self.is_offboard:
@@ -203,6 +212,13 @@ class System():
 
         self.log.info("System exited offboard mode")
         self.is_offboard = False
+
+
+    async def toggle_offboard(self):
+        if self.is_offboard:
+            await self.stop_offboard()
+        else:
+            await self.start_offboard()
 
 
     async def set_velocity(self, forward=0.0, right=0.0, up=0.0, yaw=0.0):

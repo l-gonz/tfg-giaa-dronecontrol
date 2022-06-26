@@ -1,6 +1,7 @@
 import os
 import logging
 from datetime import datetime
+from mediapipe.python.solution_base import SolutionBase
 
 from dronecontrol import tools
 from dronecontrol.common import pilot
@@ -84,20 +85,29 @@ def keyboard_control(key: int):
     if key < 0:
         return None
 
-    print(f"Pressed {chr(key)}")
+    log = make_stdout_logger(__name__)
+
+    log.info(f"Pressed [{chr(key)}]")
     if key == ord('q'): # Quit
         raise KeyboardInterrupt
     elif key == ord('k'): # Kill switch
         return pilot.System.kill_engines
+    elif key == ord('h'): # Return home
+        return pilot.System.return_home
     elif key == ord('s'): # Stop
         return pilot.System.set_velocity
     elif key == ord('t'): # Take-off
         return pilot.System.takeoff
     elif key == ord('l'): # Land
         return pilot.System.land
+    elif key == ord('o'): # Toggle offboard
+        return pilot.System.toggle_offboard
     elif key == ord(' '): # Take picture / start video
         return tools.VideoCamera.trigger
     elif key == ord('<'): # Picture <> video
         return tools.VideoCamera.change_mode
+    elif key == ord('r'): # Reset image processing
+        return SolutionBase.process
+
     else:
-        logging.getLogger(__name__).warning(f"Key {chr(key)} is not bound to any action.")
+        log.warning(f"Key {chr(key)} is not bound to any action.")

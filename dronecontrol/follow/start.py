@@ -11,7 +11,6 @@ from dronecontrol.follow.controller import Controller
 
 mp_pose = mp.solutions.pose
 
-BASE_SPEED = 2
 CAMERA_BOX = np.asarray((0, 0)), np.asarray((1, 1))
 
 
@@ -44,7 +43,7 @@ async def fly(yaw, fwd):
     await asyncio.sleep(0.1)
 
 
-async def follow_loop(pose):
+async def image_processing(pose):
     image = source.get_frame()
     try:
         results = pose.process(image)
@@ -55,11 +54,29 @@ async def follow_loop(pose):
     p1, p2 = detect(results, image)
     cv2.imshow("Camera", image)
 
-    yaw, fwd = controller.control(p1, p2)
-    print(f"Yaw: ({yaw}), Fwd: ({fwd})")
-    await fly(yaw, fwd)
-
     await utils.log_system_info(file_log, pilot, results.pose_landmarks)
+    return p1, p2
+
+
+async def offboard_control(p1, p2):
+    if pilot.is_offboard:
+        yaw, fwd = controller.control(p1, p2)
+        log.info(f"Yaw: ({yaw}), Fwd: ({fwd})")
+        await fly(yaw, fwd)
+
+
+async def manual_input_control(pose):
+    key = cv2.waitKey(source.get_delay())
+    key_action = utils.keyboard_control(key)
+    if key_action:
+        if System.__name__ in key_action.__qualname__:
+            try:
+                await key_action(pilot)
+            except mavsdk.action.ActionError as e:
+                log.error(e)
+                await pilot.abort()
+        elif SolutionBase.__name__ in key_action.__qualname__:
+            key_action(pose, source.get_blank())
 
 
 async def run():
@@ -69,32 +86,21 @@ async def run():
         log.error("Connection time-out")
         return
 
-    await pilot.takeoff()
-    await asyncio.sleep(3)
-    await pilot.start_offboard()
-
     with mp_pose.Pose() as pose:
         while True:
-            await follow_loop(pose)
+            p1, p2 = await image_processing(pose)
+            await offboard_control(p1, p2)
 
-            key = cv2.waitKey(source.get_delay())
             try:
-                key_action = utils.keyboard_control(key)
+                await manual_input_control(pose)
             except KeyboardInterrupt:
                 break
-            if key_action:
-                if System.__name__ in key_action.__qualname__:
-                    await key_action(pilot)
-                elif key == ord('r'):
-                    pose.process(self.get_blank())
-
-    await pilot.stop_offboard()
-    await pilot.land()
-    await asyncio.sleep(3)
 
 
-def get_source(ip, use_simulator):
-    if use_simulator:
+def get_source(ip, use_simulator, use_realsense):
+    if use_realsense:
+        return RealSenseCameraSource()
+    elif use_simulator:
         return SimulatorSource(ip)
     else:
         return CameraSource()
@@ -108,7 +114,7 @@ def close_handlers():
     cv2.waitKey(1)
 
 
-def main(ip, use_simulator, serial=None, log_to_file=False, port=None):
+def main(ip, use_simulator, use_realsense, serial=None, log_to_file=False, port=None):
     global pilot, source, log, controller, file_log
     log = utils.make_stdout_logger(__name__)
     file_log = utils.make_file_logger(__name__) if log_to_file else None
@@ -116,7 +122,7 @@ def main(ip, use_simulator, serial=None, log_to_file=False, port=None):
     if use_simulator and not ip:
         ip = utils.get_wsl_host_ip()
 
-    source = get_source(ip, use_simulator)
+    source = get_source(ip, use_simulator, use_realsense)
     pilot = System(ip, port, serial is not None, serial)
     controller = Controller(0.5, 2.3)
 

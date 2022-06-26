@@ -14,9 +14,12 @@ def make_stdout_logger(name: str, level=logging.INFO) -> logging.Logger:
     """Return a dedicated logger for a module."""
     log = logging.getLogger(name)
     log.setLevel(level)
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(LOGGING_FORMAT))
-    log.addHandler(handler)
+    log.propagate = False
+
+    if len(log.handlers) == 0:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter(LOGGING_FORMAT))
+        log.addHandler(handler)
     return log
 
 
@@ -24,13 +27,16 @@ def make_file_logger(name: str, level=logging.INFO, for_system_info=True) -> log
     """Return a logger that outputs to a file"""
     log = logging.getLogger(name + "_file")
     log.setLevel(level)
-    handler = logging.FileHandler(f"log_{name}_{datetime.now():%d%m%y%H%M%S}")
-    handler.setFormatter(logging.Formatter(SYSTEM_INFO_FORMATTER if for_system_info else LOGGING_FORMAT))
-    log.addHandler(handler)
+    log.propagate = False
 
-    if for_system_info:
-        with open(handler.baseFilename, 'w') as file:
-            file.write("date,landed_state,flight_mode,position,attitude,velocity,image_info")
+    if len(log.handlers) == 0:
+        handler = logging.FileHandler(f"log_{name}_{datetime.now():%d%m%y%H%M%S}")
+        handler.setFormatter(logging.Formatter(SYSTEM_INFO_FORMATTER if for_system_info else LOGGING_FORMAT))
+        log.addHandler(handler)
+
+        if for_system_info:
+            with open(handler.baseFilename, 'w') as file:
+                file.write("date,landed_state,flight_mode,position,attitude,velocity,image_info")
     return log
 
 

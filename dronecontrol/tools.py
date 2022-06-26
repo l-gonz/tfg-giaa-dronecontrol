@@ -152,15 +152,14 @@ class VideoCamera:
 
 def test_camera(use_simulator, use_hardware, use_wsl, use_realsense, use_hands, use_pose,
                 hardware_address=None, simulator_ip=None):
-    log = utils.make_stdout_logger(__name__)
     detection = ImageDetection.HAND if use_hands else (ImageDetection.POSE if use_pose else ImageDetection.NONE)
     camera = VideoCamera(use_simulator, use_hardware, use_wsl, use_realsense, detection, hardware_address, simulator_ip)
     try:
         asyncio.run(camera.run())
     except asyncio.CancelledError:
-        log.warning("Cancel program run")
+        camera.log.warning("Cancel program run")
     except KeyboardInterrupt:
-        log.warning("Cancelled with KeyboardInterrupt")
+        camera.log.warning("Cancelled with KeyboardInterrupt")
     except:
         traceback.print_exc()
     finally:

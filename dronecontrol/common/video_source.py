@@ -23,6 +23,7 @@ class VideoSourceEmpty(Exception):
 class VideoSource(ABC):
     def __init__(self) -> None:
         self.log = utils.make_stdout_logger(__name__)
+        self.img = self.get_blank()
 
     def get_delay(self):
         return 1
@@ -53,12 +54,12 @@ class CameraSource(VideoSource):
             self.log.error("Camera video capture failed")
 
     def get_frame(self):
-        success, img = self.__source.read()
+        success, self.img = self.__source.read()
         if not success:
-            img = self.get_blank()
+            self.img = self.get_blank()
         else:
-            img = cv2.flip(img, 1)
-        return img
+            self.img = cv2.flip(self.img, 1)
+        return self.img
 
     def get_size(self):
         if not self.__source.isOpened():
@@ -82,13 +83,13 @@ class FileSource(VideoSource):
             self.close()
             raise VideoSourceEmpty("Cannot access video file")
 
-        success, img = self.__source.read()
+        success, self.img = self.__source.read()
         if not success:
-            img = self.get_blank()
+            self.img = self.get_blank()
             self.close()
             raise VideoSourceEmpty("Video file finished")
 
-        return cv2.flip(img, 1)
+        return cv2.flip(self.img, 1)
 
     def get_size(self):
         return int(self.__source.get(3)), int(self.__source.get(4))
@@ -111,7 +112,8 @@ class SimulatorSource(VideoSource):
             airsim.ImageRequest("front_center", airsim.ImageType.Scene, False, False)
         ])[0]
         image_bytes = numpy.fromstring(image.image_data_uint8, dtype=numpy.uint8)
-        return image_bytes.reshape(image.height, image.width, 3)
+        self.img = image_bytes.reshape(image.height, image.width, 3)
+        return self.img
 
     def get_size(self):
         return (1280, 800)
@@ -147,8 +149,8 @@ class RealSenseCameraSource(VideoSource):
             map1 = self.undistort_rectify[0],
             map2 = self.undistort_rectify[1],
             interpolation = cv2.INTER_LINEAR)
-        color_image = cv2.cvtColor(center_undistorted[:,self.max_disp:], cv2.COLOR_GRAY2RGB)
-        return color_image
+        self.img = cv2.cvtColor(center_undistorted[:,self.max_disp:], cv2.COLOR_GRAY2RGB)
+        return self.img
 
     def get_size(self):
         return (848, 800)

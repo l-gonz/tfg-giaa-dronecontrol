@@ -1,8 +1,12 @@
-import asyncio
+import time
 import traceback
+import asyncio
 import cv2
 import numpy as np
 import mediapipe as mp
+
+from mediapipe.python.solution_base import SolutionBase
+from mavsdk.action import ActionError
 
 from dronecontrol.common import utils
 from dronecontrol.common.video_source import CameraSource, SimulatorSource
@@ -44,6 +48,7 @@ async def fly(yaw, fwd):
 
 
 async def image_processing(pose):
+    global last_run_time
     image = source.get_frame()
     try:
         results = pose.process(image)
@@ -52,6 +57,8 @@ async def image_processing(pose):
         results.pose_landmarks = None
 
     p1, p2 = detect(results, image)
+    utils.write_text_to_image(image, f"FPS: {round(1.0 / (time.time() - last_run_time))}", 0)
+    last_run_time = time.time()
     cv2.imshow("Camera", image)
 
     await utils.log_system_info(file_log, pilot, results.pose_landmarks)
@@ -72,7 +79,7 @@ async def manual_input_control(pose):
         if System.__name__ in key_action.__qualname__:
             try:
                 await key_action(pilot)
-            except mavsdk.action.ActionError as e:
+            except ActionError as e:
                 log.error(e)
                 await pilot.abort()
         elif SolutionBase.__name__ in key_action.__qualname__:
@@ -115,9 +122,10 @@ def close_handlers():
 
 
 def main(ip, use_simulator, use_realsense, serial=None, log_to_file=False, port=None):
-    global pilot, source, log, controller, file_log
+    global pilot, source, log, controller, file_log, last_run_time
     log = utils.make_stdout_logger(__name__)
     file_log = utils.make_file_logger(__name__) if log_to_file else None
+    last_run_time = time.time()
 
     if use_simulator and not ip:
         ip = utils.get_wsl_host_ip()

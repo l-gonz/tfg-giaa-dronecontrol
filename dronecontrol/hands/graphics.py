@@ -11,11 +11,6 @@ from dronecontrol.common import utils
 from dronecontrol.hands import gestures
 from dronecontrol.common.video_source import *
 
-class Color():
-    """Define color constants to use with cv2."""
-    GREEN = (0, 255, 0)
-    PINK = (255, 0, 255)
-
 
 class HandGui():
     """Provide graphic interface for hand capture.
@@ -23,8 +18,6 @@ class HandGui():
     Class for using video captured from a webcam to detect
     the presence of a hand.
     """
-    FONT = cv2.FONT_HERSHEY_PLAIN
-    FONT_SCALE = 2
     WIDTH = 640
     HEIGHT = 480
     
@@ -86,18 +79,9 @@ class HandGui():
         if show_hands:
             self.__draw_hands()
         if show_fps:
-            self.annotate(f"FPS: {self.fps}", 0)
+            utils.write_text_to_image(self.img, f"FPS: {self.fps}", 0)
         cv2.imshow("Image", self.img)
         return cv2.waitKey(self.__source.get_delay())
-
-
-    def annotate(self, value, channel=1):
-        """Annotate the captured image with the given text.
-        
-        Several channels available for positioning the text."""
-        cv2.putText(self.img, str(value),
-            self.__get_text_pos(channel),
-            self.FONT, self.FONT_SCALE, Color.GREEN, self.FONT_SCALE)
 
 
     def subscribe_to_gesture(self, func: typing.Callable[[gestures.Gesture], None]):
@@ -164,15 +148,6 @@ class HandGui():
         self.__past_time = self.__current_time
         return int(fps)
 
-
-    def __get_text_pos(self, channel) -> typing.Tuple[int,int]:
-        """Map channel number to pixel position."""
-        if channel == 0:
-            return (10, 30)
-        if channel == 1:
-            return (10, self.HEIGHT - 10)
-        if channel == 2:
-            return (10, self.HEIGHT - 50)
 
 
 if __name__ == "__main__":

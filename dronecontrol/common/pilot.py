@@ -138,7 +138,7 @@ class System():
         try:
             await self.mav.action.hold()
         except Exception as e:
-            log.error(e)
+            self.log.error(e)
             await self.return_home()
 
 

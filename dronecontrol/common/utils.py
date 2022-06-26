@@ -1,5 +1,7 @@
 import os
 import logging
+import typing
+import cv2
 from datetime import datetime
 from mediapipe.python.solution_base import SolutionBase
 
@@ -9,6 +11,15 @@ from dronecontrol.common import pilot
 
 LOGGING_FORMAT = '%(levelname)s:%(name)s: %(message)s'
 SYSTEM_INFO_FORMATTER = '%(asctime)s,%(message)s'
+
+
+FONT = cv2.FONT_HERSHEY_PLAIN
+FONT_SCALE = 2
+
+class Color():
+    """Define color constants to use with cv2."""
+    GREEN = (0, 255, 0)
+    PINK = (255, 0, 255)
 
 
 def make_stdout_logger(name: str, level=logging.INFO) -> logging.Logger:
@@ -66,6 +77,24 @@ async def log_system_info(log: logging.Logger, pilot: pilot.System, tracking_inf
     velocity = str(await pilot.get_velocity())
 
     log.info('%s,%s,%s,%s,%s,%s', landed_state, flight_mode, position, attitude, velocity, tracking_info)
+
+
+def write_text_to_image(image, text, channel=1):
+    """Annotate an image with the given text.
+        
+    Several channels available for positioning the text."""
+    cv2.putText(image, str(text), __get_text_pos(image, channel),
+        FONT, FONT_SCALE, Color.GREEN, FONT_SCALE)
+
+
+def __get_text_pos(image, channel) -> typing.Tuple[int,int]:
+    """Map channel number to pixel position."""
+    if channel == 0:
+        return (10, 30)
+    if channel == 1:
+        return (10, image.shape[0] - 10)
+    if channel == 2:
+        return (10, image.shape[0] - 50)
 
 
 def get_wsl_host_ip():

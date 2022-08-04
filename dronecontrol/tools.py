@@ -1,6 +1,7 @@
 import os
 import datetime
 import traceback
+import time
 import cv2
 import asyncio
 from enum import Enum
@@ -45,6 +46,7 @@ class VideoCamera:
         self.mode = CameraMode.PICTURE
         self.is_recording = False
         self.out = None
+        self.last_run_time = time.time()
 
         self.hand_detection = HandGui(source = self.source) if image_detection == ImageDetection.HAND else None
         self.pose_detection = mp_pose.Pose() if image_detection == ImageDetection.POSE else None
@@ -60,8 +62,9 @@ class VideoCamera:
                 self.hand_detection.render()
             else:
                 self.img = self.source.get_frame()
-                cv2.putText(self.img, f"Mode {self.mode}: {'' if self.is_recording else 'not '} recording",
-                    (10, 30), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
+                utils.write_text_to_image(self.img, f"Mode {self.mode}: {'' if self.is_recording else 'not '} recording", 0)
+                utils.write_text_to_image(self.img, f"FPS: {round(1.0 / (time.time() - self.last_run_time))}")
+                self.last_run_time = time.time()
 
                 if self.pose_detection:
                     results = self.pose_detection.process(self.img)

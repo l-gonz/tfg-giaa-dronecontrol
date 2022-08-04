@@ -126,6 +126,8 @@ class SimulatorSource(VideoSource):
 
 
 class RealSenseCameraSource(VideoSource):
+    SIZE = 800
+
     def __init__(self):
         super().__init__()
         try:
@@ -133,9 +135,15 @@ class RealSenseCameraSource(VideoSource):
         except NameError:
             raise NotImplementedError("Attempted to use RealSense source in a system without Real Sense SDK")
         config = pyrealsense2.config()
-        self.pipeline.start(config, self.callback)
+        try:
+            self.pipeline.start(config, self.callback)
+        except RuntimeError as e:
+            self.log.error(e)
+            return
+
         self.image_data = None
         self.valid_data = False
+        self.img = self.get_blank()
 
         self.calculate_rectify()
         
@@ -153,7 +161,7 @@ class RealSenseCameraSource(VideoSource):
         return self.img
 
     def get_size(self):
-        return (848, 800)
+        return self.SIZE, self.SIZE
 
     def close(self):
         try:
@@ -178,7 +186,7 @@ class RealSenseCameraSource(VideoSource):
         intrinsics = streams.get_intrinsics()
 
         stereo_fov_rad = 90 * (pi/180)  # 90 degree desired fov
-        stereo_height_px = 300          # 300x300 pixel stereo output
+        stereo_height_px = self.SIZE    # pixel size of stereo output
         stereo_focal_px = stereo_height_px/2 / tan(stereo_fov_rad/2)
         stereo_width_px = stereo_height_px + self.max_disp
         stereo_size = (stereo_width_px, stereo_height_px)

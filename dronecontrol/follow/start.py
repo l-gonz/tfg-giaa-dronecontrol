@@ -9,7 +9,7 @@ from mediapipe.python.solution_base import SolutionBase
 from mavsdk.action import ActionError
 
 from dronecontrol.common import utils
-from dronecontrol.common.video_source import CameraSource, SimulatorSource
+from dronecontrol.common.video_source import CameraSource, SimulatorSource, RealSenseCameraSource
 from dronecontrol.common.pilot import System
 from dronecontrol.follow.controller import Controller
 

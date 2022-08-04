@@ -66,7 +66,7 @@ async def image_processing(pose):
 
 
 async def offboard_control(p1, p2):
-    if pilot.is_offboard:
+    if await pilot.is_offboard():
         yaw, fwd = controller.control(p1, p2)
         log.info(f"Yaw: ({yaw}), Fwd: ({fwd})")
         await fly(yaw, fwd)
@@ -127,7 +127,7 @@ def main(ip, use_simulator, use_realsense, serial=None, log_to_file=False, port=
     file_log = utils.make_file_logger(__name__) if log_to_file else None
     last_run_time = time.time()
 
-    if use_simulator and not ip:
+    if use_simulator and not ip and not serial:
         ip = utils.get_wsl_host_ip()
 
     source = get_source(ip, use_simulator, use_realsense)

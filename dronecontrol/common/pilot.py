@@ -3,7 +3,7 @@ import typing
 
 import mavsdk
 from mavsdk.action import ActionError
-from mavsdk.telemetry import LandedState
+from mavsdk.telemetry import LandedState, FlightMode
 from mavsdk.offboard import OffboardError, VelocityBodyYawspeed
 
 from dronecontrol.common import utils
@@ -37,7 +37,6 @@ class System():
             - RPi UART over serial cable: '/dev/serial0:921600'
         """
         self.is_ready = False
-        self.is_offboard = False
         self.actions = [] # type: typing.List[Action]
         self.port = port or self.DEFAULT_UDP_PORT
         self.ip = ip
@@ -134,7 +133,6 @@ class System():
 
 
     async def abort(self):
-        await self.stop_offboard()
         try:
             await self.mav.action.hold()
         except Exception as e:
@@ -144,8 +142,6 @@ class System():
 
     async def return_home(self):
         """Return to home position and land."""
-        if self.is_offboard:
-            await self.stop_offboard()
         try:
             await self.mav.action.return_to_launch()
         except ActionError as error:
@@ -176,8 +172,6 @@ class System():
         """Land.
         
         Finishes when the system is in the ground."""
-        if self.is_offboard:
-            await self.stop_offboard()
         await self.mav.action.land()
         await self.__landing_finished()
 
@@ -197,7 +191,6 @@ class System():
             return
 
         self.log.info("System in offboard mode")
-        self.is_offboard = True
 
     
     async def stop_offboard(self):
@@ -211,11 +204,10 @@ class System():
             return
 
         self.log.info("System exited offboard mode")
-        self.is_offboard = False
 
 
     async def toggle_offboard(self):
-        if self.is_offboard:
+        if await self.is_offboard():
             await self.stop_offboard()
         else:
             await self.start_offboard()
@@ -223,9 +215,6 @@ class System():
 
     async def set_velocity(self, forward=0.0, right=0.0, up=0.0, yaw=0.0):
         """Set the system's velocity in body coordinates."""
-        if not self.is_offboard:
-            self.log.warning("Cannot set velocity because system is not in offboard mode")
-            return
         await self.mav.offboard.set_velocity_body(
             VelocityBodyYawspeed(forward, right, -up, yaw))
 
@@ -248,8 +237,12 @@ class System():
 
 
     async def get_flight_mode(self):
-        """Return current system landed state"""
+        """Return current system flight mode"""
         return await System.get_async_generated(self.mav.telemetry.flight_mode())
+
+    
+    async def is_offboard(self):
+        return await self.get_flight_mode() == FlightMode.OFFBOARD
 
 
     async def __landing_finished(self):

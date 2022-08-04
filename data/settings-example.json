@@ -23,6 +23,7 @@
             "Parameters": {
                 "NAV_RCL_ACT": 0,
                 "NAV_DLL_ACT": 0,
+                "COM_RCL_EXCEPT": 7,
                 "LPE_LAT": 47.641468,
                 "LPE_LON": -122.140165
             }

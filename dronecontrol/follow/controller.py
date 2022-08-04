@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 class Controller:
 
     MAX_FWD_VEL = 1
+    ZEROES = np.asarray([0, 0])
+    ONES = np.asarray([1, 1])
 
     def __init__(self, target_x, area_percentage) -> None:
         self.yaw_pid = PID(40, 5, 1)
@@ -27,6 +29,9 @@ class Controller:
 
     
     def control(self, p1, p2):
+        if np.array_equal(p1, self.ZEROES) and np.array_equal(p2, self.ONES):
+            return 0, 0
+
         self.yaw_pid.update(self.__get_yaw_point_from_box(p1, p2))
         yaw_vel = self.__get_yaw_vel_from_output(self.yaw_pid.output)
 

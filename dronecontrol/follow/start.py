@@ -121,16 +121,17 @@ def close_handlers():
     cv2.waitKey(1)
 
 
-def main(ip, use_simulator, use_realsense, serial=None, log_to_file=False, port=None):
+def main(ip, simulator=None, use_realsense=False, serial=None, log_to_file=False, port=None):
     global pilot, source, log, controller, file_log, last_run_time
     log = utils.make_stdout_logger(__name__)
     file_log = utils.make_file_logger(__name__) if log_to_file else None
     last_run_time = time.time()
 
-    if use_simulator and not ip and not serial:
-        ip = utils.get_wsl_host_ip()
+    # Connect with sim and no sim IP provided
+    if simulator is not None and not simulator and not serial:
+        simulator = utils.get_wsl_host_ip()
 
-    source = get_source(ip, use_simulator, use_realsense)
+    source = get_source(simulator, simulator is not None, use_realsense)
     pilot = System(ip, port, serial is not None, serial)
     controller = Controller(0.5, 2.3)
 

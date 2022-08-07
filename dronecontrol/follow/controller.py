@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 class Controller:
 
     MAX_FWD_VEL = 1
+    MAX_YAW_VEL = 6
+    MAX_AREA_VARIANCE = 2
     ZEROES = np.asarray([0, 0])
     ONES = np.asarray([1, 1])
 
@@ -73,15 +75,24 @@ class Controller:
 
     def __get_fwd_point_from_box(self, p1, p2):
         area = (p2[0] - p1[0]) * (p2[1] - p1[1]) * 100
-        if area > self.prev_fwd_feedback + 1 or area < self.prev_fwd_feedback - 1:
-            error = area - self.fwd_pid.SetPoint
-            return self.prev_fwd_feedback - error * 0.001
+
+        # Adjust for sudden changes in detected area that differ greatly from the target area
+        error = area - self.fwd_pid.SetPoint
+        diff = area - self.prev_fwd_feedback
+        if error > self.MAX_AREA_VARIANCE and diff > self.MAX_AREA_VARIANCE:
+            input = self.fwd_pid.SetPoint + self.MAX_AREA_VARIANCE
+        elif error < -self.MAX_AREA_VARIANCE and diff < -self.MAX_AREA_VARIANCE:
+            input = self.fwd_pid.SetPoint - self.MAX_AREA_VARIANCE
+        else:
+            input = area
+        self.prev_fwd_feedback = input
         
-        return area
+        return input
 
 
     def __get_yaw_vel_from_output(self, output):
-        return -output
+        clipped = np.clip(-output, -self.MAX_YAW_VEL, self.MAX_YAW_VEL)
+        return clipped
 
 
     def __get_fwd_vel_from_output(self, output):

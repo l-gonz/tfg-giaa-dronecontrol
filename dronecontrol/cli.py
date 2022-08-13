@@ -1,6 +1,6 @@
 import click
 from dronecontrol import tools as tools_module
-from dronecontrol.follow import start as follow_entry
+from dronecontrol.follow import main as follow_entry
 from dronecontrol.hands import mapper as hands_entry
 
 

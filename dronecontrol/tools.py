@@ -10,7 +10,7 @@ import mediapipe as mp
 from dronecontrol.common import utils, pilot
 from dronecontrol.common.video_source import CameraSource, SimulatorSource, RealSenseCameraSource
 from dronecontrol.hands.graphics import HandGui
-from dronecontrol.follow.start import detect
+from dronecontrol.follow.image_processing import detect
 
 mp_pose = mp.solutions.pose
 

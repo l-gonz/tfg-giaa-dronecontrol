@@ -7,14 +7,15 @@ import matplotlib.pyplot as plt
 class Controller:
 
     MAX_FWD_VEL = 1
-    MAX_YAW_VEL = 6
+    MAX_YAW_VEL = 5
     MAX_AREA_VARIANCE = 2
+    ALLOWED_ERROR = 0.03
     ZEROES = np.asarray([0, 0])
     ONES = np.asarray([1, 1])
 
     def __init__(self, target_x, area_percentage) -> None:
-        self.yaw_pid = PID(40, 5, 1)
-        self.fwd_pid = PID(.5, .08, 0.001)
+        self.yaw_pid = PID(30, .10, 0.01)
+        self.fwd_pid = PID(.5, .005, 0.001)
         
         self.yaw_pid.setSampleTime(0.01)
         self.fwd_pid.setSampleTime(0.01)
@@ -34,17 +35,25 @@ class Controller:
         if np.array_equal(p1, self.ZEROES) and np.array_equal(p2, self.ONES):
             return 0, 0
 
-        self.yaw_pid.update(self.__get_yaw_point_from_box(p1, p2))
+        yaw_input = self.__get_yaw_point_from_box(p1, p2)
+        self.yaw_pid.update(yaw_input)
         yaw_vel = self.__get_yaw_vel_from_output(self.yaw_pid.output)
 
-        self.fwd_pid.update(self.__get_fwd_point_from_box(p1, p2))
+        fwd_input = self.__get_fwd_point_from_box(p1, p2)
+        self.fwd_pid.update(fwd_input)
         fwd_vel = self.__get_fwd_vel_from_output(self.fwd_pid.output)
 
-        self._feedback_list.append(self.__get_fwd_point_from_box(p1, p2))
-        self._setpoint_list.append(self.fwd_pid.SetPoint)
-        self._time_list.append(self.fwd_pid.current_time - self._start_time)
-        self._output_list.append(fwd_vel)
-        
+        self._feedback_list.append(self.__get_yaw_point_from_box(p1, p2))
+        self._setpoint_list.append(self.yaw_pid.SetPoint)
+        self._time_list.append(self.yaw_pid.current_time - self._start_time)
+        self._output_list.append(yaw_vel)
+
+        # Stop control when close enough
+        if abs(1 - yaw_input / self.yaw_pid.SetPoint) < self.ALLOWED_ERROR:
+            yaw_vel = 0
+        if abs(1 - fwd_input / self.fwd_pid.SetPoint) < self.ALLOWED_ERROR:
+            fwd_vel = 0
+
         return yaw_vel, fwd_vel
 
 
@@ -76,7 +85,8 @@ class Controller:
     def __get_fwd_point_from_box(self, p1, p2):
         area = (p2[0] - p1[0]) * (p2[1] - p1[1]) * 100
 
-        # Adjust for sudden changes in detected area that differ greatly from the target area
+        # Smooth input to adjust for sudden changes in detected area
+        # that differ greatly from the target area
         error = area - self.fwd_pid.SetPoint
         diff = area - self.prev_fwd_feedback
         if error > self.MAX_AREA_VARIANCE and diff > self.MAX_AREA_VARIANCE:

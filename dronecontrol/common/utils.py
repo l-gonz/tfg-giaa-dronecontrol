@@ -20,6 +20,8 @@ class Color():
     """Define color constants to use with cv2."""
     GREEN = (0, 255, 0)
     PINK = (255, 0, 255)
+    BLUE = (255, 0, 0)
+    RED = (0, 0, 255)
 
 
 def make_stdout_logger(name: str, level=logging.INFO) -> logging.Logger:

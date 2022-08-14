@@ -139,6 +139,9 @@ class RealSenseCameraSource(VideoSource):
     SIZE = 800
 
     def __init__(self):
+        self.image_data = None
+        self.valid_data = False
+
         super().__init__()
         try:
             self.pipeline = pyrealsense2.pipeline()
@@ -151,8 +154,6 @@ class RealSenseCameraSource(VideoSource):
             self.log.error(e)
             return
 
-        self.image_data = None
-        self.valid_data = False
         self.img = self.get_blank()
 
         self.calculate_rectify()

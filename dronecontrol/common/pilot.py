@@ -164,15 +164,22 @@ class System():
             # if already armed, ignore
             self.log.error("ARM: " + str(error))
 
-        await self.mav.action.takeoff()
-        await self.__wait_for_landed_state(LandedState.IN_AIR)
+        try:
+            await self.mav.action.takeoff()
+            await self.__wait_for_landed_state(LandedState.IN_AIR)
+        except ActionError as error:
+            self.log.error("TAKEOFF: " + str(error))
 
 
     async def land(self):
         """Land.
         
         Finishes when the system is in the ground."""
-        await self.mav.action.land()
+        try:
+            await self.mav.action.land()
+        except ActionError as error:
+            self.log.error("LAND: " + str(error))
+
         await self.__landing_finished()
 
 

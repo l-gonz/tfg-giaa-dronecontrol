@@ -87,7 +87,10 @@ class VideoCamera:
         if pilot_task:
             if not pilot_task.done():
                 pilot_task.cancel()
-            await pilot_task
+            try:
+                await pilot_task
+            except Exception as e:
+                self.log.error(e)
 
         
     def close(self):

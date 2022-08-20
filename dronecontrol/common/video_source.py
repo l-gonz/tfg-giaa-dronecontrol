@@ -45,14 +45,15 @@ class VideoSource(ABC):
 
 class CameraSource(VideoSource):
     def __init__(self, camera=0):
-        super().__init__()
         self.__source = cv2.VideoCapture(camera)
+        super().__init__()
         
         if self.__source.isOpened():
             self.__source.set(cv2.CAP_PROP_FRAME_WIDTH, WIDTH)
             self.__source.set(cv2.CAP_PROP_FRAME_HEIGHT, HEIGHT)
         else:
             self.log.error("Camera video capture failed")
+            
 
     def get_frame(self):
         success, self.img = self.__source.read()
@@ -136,7 +137,7 @@ class SimulatorSource(VideoSource):
 
 
 class RealSenseCameraSource(VideoSource):
-    SIZE = 800
+    SIZE = 500
 
     def __init__(self):
         self.image_data = None
@@ -154,6 +155,7 @@ class RealSenseCameraSource(VideoSource):
             self.log.error(e)
             return
 
+        self.log.info("Connected to RealSense")
         self.img = self.get_blank()
 
         self.calculate_rectify()

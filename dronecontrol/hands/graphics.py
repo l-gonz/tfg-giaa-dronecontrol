@@ -137,7 +137,7 @@ class HandGui():
             for mark in hand.landmark:
                 center = (int(mark.x * self.WIDTH), int(mark.y * self.HEIGHT))
                 self.log.debug(f"-> {center[0], center[1]}")
-                cv2.circle(self.img, center, 3, Color.PINK, cv2.FILLED)
+                cv2.circle(self.img, center, 3, utils.Color.PINK, cv2.FILLED)
             mp_drawing.draw_landmarks(self.img, hand, mp_connections.HAND_CONNECTIONS)
 
 

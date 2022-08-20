@@ -14,7 +14,8 @@ SYSTEM_INFO_FORMATTER = '%(asctime)s,%(message)s'
 
 
 FONT = cv2.FONT_HERSHEY_PLAIN
-FONT_SCALE = 2
+FONT_SCALE = 1
+
 
 class Color():
     """Define color constants to use with cv2."""

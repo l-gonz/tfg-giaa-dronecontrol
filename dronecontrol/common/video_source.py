@@ -23,6 +23,7 @@ class VideoSourceEmpty(Exception):
 
 class VideoSource(ABC):
     def __init__(self) -> None:
+        self.__source = None
         self.log = utils.make_stdout_logger(__name__)
         self.img = self.get_blank()
 
@@ -75,8 +76,8 @@ class CameraSource(VideoSource):
 
 class FileSource(VideoSource):
     def __init__(self, file):
-        super().__init__()
         self.__source = cv2.VideoCapture(file)
+        super().__init__()
         if not self.__source.isOpened():
             self.log.error("Could not open video file")
 

@@ -8,7 +8,7 @@ from enum import Enum
 import mediapipe as mp
 
 from dronecontrol.common import utils, pilot
-from dronecontrol.common.video_source import CameraSource, SimulatorSource, RealSenseCameraSource
+from dronecontrol.common.video_source import CameraSource, SimulatorSource, RealSenseCameraSource, FileSource
 from dronecontrol.hands.graphics import HandGui
 from dronecontrol.follow.image_processing import detect
 
@@ -29,7 +29,8 @@ class VideoCamera:
     VIDEO_CODE = cv2.VideoWriter_fourcc('M','J','P','G')
 
     def __init__(self, use_simulator, use_hardware, use_wsl, use_realsense, 
-                 image_detection, hardware_address=None, simulator_ip=None):
+                 image_detection, hardware_address=None, simulator_ip=None,
+                 file=None):
         self.log = utils.make_stdout_logger(__name__)
         self.pilot = None
         if use_simulator or use_hardware:
@@ -37,6 +38,8 @@ class VideoCamera:
 
         if use_realsense:
             self.source = RealSenseCameraSource()
+        elif file:
+            self.source = FileSource(file)
         elif use_simulator:
             self.source = SimulatorSource(utils.get_wsl_host_ip() if use_wsl else simulator_ip if simulator_ip else "")
         else:
@@ -49,7 +52,7 @@ class VideoCamera:
         self.last_run_time = time.time()
 
         self.hand_detection = HandGui(source = self.source) if image_detection == ImageDetection.HAND else None
-        self.pose_detection = mp_pose.Pose() if image_detection == ImageDetection.POSE else None
+        self.pose_detection = mp_pose.Pose(model_complexity=0) if image_detection == ImageDetection.POSE else None
         
 
     async def run(self):
@@ -157,9 +160,9 @@ class VideoCamera:
 
 
 def test_camera(use_simulator, use_hardware, use_wsl, use_realsense, use_hands, use_pose,
-                hardware_address=None, simulator_ip=None):
+                hardware_address=None, simulator_ip=None, file=None):
     detection = ImageDetection.HAND if use_hands else (ImageDetection.POSE if use_pose else ImageDetection.NONE)
-    camera = VideoCamera(use_simulator, use_hardware, use_wsl, use_realsense, detection, hardware_address, simulator_ip)
+    camera = VideoCamera(use_simulator, use_hardware, use_wsl, use_realsense, detection, hardware_address, simulator_ip, file)
     try:
         asyncio.run(camera.run())
     except asyncio.CancelledError:

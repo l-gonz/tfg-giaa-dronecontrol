@@ -39,9 +39,10 @@ def tools():
 @click.option("-rs", "--realsense", "use_realsense", is_flag=True, help="use a RealSense camera as source")
 @click.option("-h", "--hand-detection", "use_hands", is_flag=True, help="use hand detection for image processing")
 @click.option("-p", "--pose-detection", "use_pose", is_flag=True, help="use pose detection for image processing")
-def test_camera(simulator, hardware, use_wsl, use_realsense, use_hands, use_pose):
+@click.option("-f", "--file", help="file name to use as video source")
+def test_camera(simulator, hardware, use_wsl, use_realsense, use_hands, use_pose, file):
     tools_module.test_camera(simulator is not None, hardware is not None, use_wsl, use_realsense, 
-                             use_hands, use_pose, hardware, simulator)
+                             use_hands, use_pose, hardware, simulator, file)
 
 if __name__ == "__main__":
     main()

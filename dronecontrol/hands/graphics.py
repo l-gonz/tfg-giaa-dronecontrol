@@ -107,6 +107,20 @@ class HandGui():
         return self.hand_model.process(rgb_img)
 
 
+    def draw_hands(self, img=None):
+        """Draw hand landmarks to captured image."""
+        if img is None: 
+            img = self.img
+        if not self.hand_landmarks:
+            return
+        for hand in self.hand_landmarks:
+            for mark in hand.landmark:
+                center = (int(mark.x * self.WIDTH), int(mark.y * self.HEIGHT))
+                self.log.debug(f"-> {center[0], center[1]}")
+                cv2.circle(img, center, 3, utils.Color.PINK, cv2.FILLED)
+            mp_drawing.draw_landmarks(img, hand, mp_connections.HAND_CONNECTIONS)
+
+
     def get_current_gesture(self):
         return self.__past_gesture
 
@@ -127,18 +141,6 @@ class HandGui():
         self.log.info("New gesture: %s", gesture)
         for func in self.__gesture_event_handler:
             func(gesture)
-
-
-    def __draw_hands(self):
-        """Draw hand landmarks to captured image."""
-        if not self.hand_landmarks:
-            return
-        for hand in self.hand_landmarks:
-            for mark in hand.landmark:
-                center = (int(mark.x * self.WIDTH), int(mark.y * self.HEIGHT))
-                self.log.debug(f"-> {center[0], center[1]}")
-                cv2.circle(self.img, center, 3, utils.Color.PINK, cv2.FILLED)
-            mp_drawing.draw_landmarks(self.img, hand, mp_connections.HAND_CONNECTIONS)
 
 
     def __calculate_fps(self) -> int:

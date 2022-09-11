@@ -52,7 +52,7 @@ class VideoCamera:
         self.last_run_time = time.time()
 
         self.hand_detection = HandGui(source = self.source) if image_detection == ImageDetection.HAND else None
-        self.pose_detection = mp_pose.Pose(model_complexity=0) if image_detection == ImageDetection.POSE else None
+        self.pose_detection = mp_pose.Pose(model_complexity=1, min_detection_confidence=0.5, min_tracking_confidence=0.5) if image_detection == ImageDetection.POSE else None
         
 
     async def run(self):
@@ -61,18 +61,21 @@ class VideoCamera:
         while True:
             if self.hand_detection:
                 self.hand_detection.capture()
-                self.img = self.hand_detection.img
-                self.hand_detection.render()
+                raw_img = self.hand_detection.img
+                self.img = raw_img.copy()
+                self.hand_detection.draw_hands()
             else:
-                self.img = self.source.get_frame()
-                utils.write_text_to_image(self.img, f"Mode {self.mode}: {'' if self.is_recording else 'not '} recording", 0)
-                utils.write_text_to_image(self.img, f"FPS: {round(1.0 / (time.time() - self.last_run_time))}")
-                self.last_run_time = time.time()
+                raw_img = self.source.get_frame()
+                self.img = raw_img.copy()
 
                 if self.pose_detection:
                     results = self.pose_detection.process(self.img)
-                    detect(results, self.img)
-                cv2.imshow("Image", self.img)
+                    detect(results, raw_img)
+
+            utils.write_text_to_image(raw_img, f"Mode {self.mode}: {'' if self.is_recording else 'not '} recording", 0)
+            utils.write_text_to_image(raw_img, f"FPS: {round(1.0 / (time.time() - self.last_run_time))}")
+            self.last_run_time = time.time()
+            cv2.imshow("Image", raw_img)
 
             try:
                 self.__handle_key_input()

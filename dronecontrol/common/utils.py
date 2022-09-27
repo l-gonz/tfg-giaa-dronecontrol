@@ -2,10 +2,12 @@ import os
 import logging
 import typing
 import cv2
+import numpy
+import matplotlib.pyplot as plt
 from datetime import datetime
 from mediapipe.python.solution_base import SolutionBase
 
-from dronecontrol import tools
+from dronecontrol.tools import tools
 from dronecontrol.common import pilot
 
 
@@ -126,7 +128,7 @@ def keyboard_control(key: int):
         return pilot.System.kill_engines
     elif key == ord('h'): # Return home
         return pilot.System.return_home
-    elif key == ord('s'): # Stop
+    elif key == ord('0'): # Stop
         return pilot.System.set_velocity
     elif key == ord('t'): # Take-off
         return pilot.System.takeoff
@@ -134,6 +136,14 @@ def keyboard_control(key: int):
         return pilot.System.land
     elif key == ord('o'): # Toggle offboard
         return pilot.System.toggle_offboard
+    elif key == ord('w'): # Forward
+        return pilot.System.move_fwd_positive
+    elif key == ord('a'): # Yaw left
+        return pilot.System.move_yaw_left
+    elif key == ord('s'): # Forward
+        return pilot.System.move_fwd_positive
+    elif key == ord('d'): # Yaw right
+        return pilot.System.move_yaw_right
     elif key == ord(' '): # Take picture / start video
         return tools.VideoCamera.trigger
     elif key == ord('<'): # Picture <> video
@@ -142,4 +152,30 @@ def keyboard_control(key: int):
         return SolutionBase.process
 
     else:
-        log.warning(f"Key {chr(key)} is not bound to any action.")
+        log.warning(f"Key {chr(key)}:{key} is not bound to any action.")
+
+
+def plot(x, y, block=True, title="TEST PID", xlabel="time (s)", ylabel="PID (PV)"):
+        if len(x) == 0:
+            return
+        
+        x = numpy.array(x, dtype=object)
+        y = numpy.array(y, dtype=object)
+        plt.figure()
+
+        if x.shape[0] != y.shape[0]:
+            for y_data in y:
+                plt.plot(x, y_data)
+        elif x.shape == y.shape:
+            for i in range(x.shape[0]):
+                plt.plot(x[i], y[i])
+        else:
+            raise Exception("Unmatched data")
+
+
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title(title)
+
+        plt.grid(True)
+        plt.show(block=block)

@@ -1,6 +1,5 @@
 import os
 import datetime
-import traceback
 import time
 import cv2
 import asyncio
@@ -11,6 +10,7 @@ from dronecontrol.common import utils, pilot
 from dronecontrol.common.video_source import CameraSource, SimulatorSource, RealSenseCameraSource, FileSource
 from dronecontrol.hands.graphics import HandGui
 from dronecontrol.follow.image_processing import detect
+
 
 mp_pose = mp.solutions.pose
 
@@ -159,24 +159,3 @@ class VideoCamera:
     @staticmethod
     def __get_formatted_date():
         return datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-
-
-
-def test_camera(use_simulator, use_hardware, use_wsl, use_realsense, use_hands, use_pose,
-                hardware_address=None, simulator_ip=None, file=None):
-    detection = ImageDetection.HAND if use_hands else (ImageDetection.POSE if use_pose else ImageDetection.NONE)
-    camera = VideoCamera(use_simulator, use_hardware, use_wsl, use_realsense, detection, hardware_address, simulator_ip, file)
-    try:
-        asyncio.run(camera.run())
-    except asyncio.CancelledError:
-        camera.log.warning("Cancel program run")
-    except KeyboardInterrupt:
-        camera.log.warning("Cancelled with KeyboardInterrupt")
-    except:
-        traceback.print_exc()
-    finally:
-        camera.close()
-
-
-if __name__ == "__main__":
-    test_camera(False, False, False)

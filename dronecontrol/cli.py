@@ -1,6 +1,6 @@
 import click
-from dronecontrol import tools as tools_module
-from dronecontrol.follow import main as follow_entry
+from dronecontrol.tools import tools as tools_module
+from dronecontrol.follow import follow as follow_entry
 from dronecontrol.hands import mapper as hands_entry
 
 
@@ -43,6 +43,12 @@ def tools():
 def test_camera(simulator, hardware, use_wsl, use_realsense, use_hands, use_pose, file):
     tools_module.test_camera(simulator is not None, hardware is not None, use_wsl, use_realsense, 
                              use_hands, use_pose, hardware, simulator, file)
+
+@tools.command()
+@click.option("--yaw/--forward", default=True, help="test the controller yaw or forward movement")
+@click.option("-f", "--file", default=None, help="file name to use as data source")
+def test_controller(yaw, file):
+    tools_module.test_controller(yaw, file)
 
 if __name__ == "__main__":
     main()

@@ -25,7 +25,7 @@ CORE_LANDMARKS = [
 def detect(results, image):
     """Process detection results into a box bounding the detected person."""
     if not results.pose_landmarks:
-        return CAMERA_BOX
+        return CAMERA_BOX[0], CAMERA_BOX[1]
 
     p1, p2 = get_bounding_box(results.pose_landmarks.landmark)
     error = not is_standing_pose(results, p1, p2)
@@ -37,7 +37,10 @@ def detect(results, image):
                               mp_pose.POSE_CONNECTIONS,
                               landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
 
-    return CAMERA_BOX if error else p1, p2
+    if error:
+        return CAMERA_BOX[0], CAMERA_BOX[1]
+    else:
+        return p1, p2
         
 
 

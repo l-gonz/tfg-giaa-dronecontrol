@@ -4,7 +4,7 @@ import typing
 import mavsdk
 from mavsdk.action import ActionError
 from mavsdk.telemetry import LandedState, FlightMode
-from mavsdk.offboard import OffboardError, VelocityBodyYawspeed
+from mavsdk.offboard import OffboardError, VelocityBodyYawspeed, PositionNedYaw
 
 from dronecontrol.common import utils
 
@@ -222,12 +222,43 @@ class System():
 
     async def set_velocity(self, forward=0.0, right=0.0, up=0.0, yaw=0.0):
         """Set the system's velocity in body coordinates."""
-        await self.mav.offboard.set_velocity_body(
-            VelocityBodyYawspeed(forward, right, -up, yaw))
+        if not await self.is_offboard():
+            self.log.warning("System is not in offboard move, it cannot move")
+        else:
+            await self.mav.offboard.set_velocity_body(
+                VelocityBodyYawspeed(forward, right, -up, yaw))
+
+    
+    async def set_position_ned_yaw(self, position: PositionNedYaw):
+        """Move the system to a target position."""
+        if not await self.is_offboard():
+            self.log.warning("System is not in offboard move, it cannot move")
+        else:
+            await self.mav.offboard.set_position_ned(position)
+
+
+    async def move_yaw_right(self):
+        pos = await self.get_position_ned_yaw()
+        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m, pos.east_m, pos.down_m, pos.yaw_deg + 1))
+    async def move_yaw_left(self):
+        pos = await self.get_position_ned_yaw()
+        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m, pos.east_m, pos.down_m, pos.yaw_deg - 1))
+    async def move_fwd_positive(self):
+        pos = await self.get_position_ned_yaw()
+        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m + 0.5, pos.east_m, pos.down_m, pos.yaw_deg))
+    async def move_fwd_negative(self):
+        pos = await self.get_position_ned_yaw()
+        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m - 0.5, pos.east_m, pos.down_m, pos.yaw_deg))
 
 
     async def get_position(self):
         return await System.get_async_generated(self.mav.telemetry.position())
+
+
+    async def get_position_ned_yaw(self):
+        pos_ned = (await System.get_async_generated(self.mav.telemetry.position_velocity_ned())).position
+        yaw = (await System.get_async_generated(self.mav.telemetry.heading())).heading_deg
+        return PositionNedYaw(pos_ned.north_m, pos_ned.east_m, pos_ned.down_m, yaw)
 
 
     async def get_attitude(self):

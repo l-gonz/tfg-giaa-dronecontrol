@@ -1,5 +1,4 @@
 import asyncio
-from curses import KEY_A1
 from datetime import datetime
 from enum import Enum
 import time

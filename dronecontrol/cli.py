@@ -12,7 +12,7 @@ def main():
 
 @main.command()
 @click.option("-p", "--port", type=int, help="port for UDP connections")
-@click.option("--serial", is_flag=False, flag_value="", help="connect to drone system through serial, default device is /dev/ttyUSB0")
+@click.option("-s", "--serial", is_flag=False, flag_value="", help="connect to drone system through serial, default device is /dev/ttyUSB0")
 @click.option("-f", "--file", type=click.Path(exists=True, readable=True), help="file to use as source instead of the camera")
 @click.option("-l", "--log", is_flag=True, help="log important info and save video")
 def hand(port, serial, file, log):
@@ -49,6 +49,10 @@ def test_camera(simulator, hardware, use_wsl, use_realsense, use_hands, use_pose
 @click.option("-f", "--file", default=None, help="file name to use as data source")
 def test_controller(yaw, file):
     tools_module.test_controller(yaw, file)
+
+@tools.command()
+def tune():
+    tools_module.tune_pid()
 
 if __name__ == "__main__":
     main()

@@ -16,7 +16,7 @@ from dronecontrol.follow.controller import Controller
 mp_pose = mp.solutions.pose
 
 YAW_POINT = 0.5 # Target mid-point of horizontal axis
-FWD_POINT = 2.3 # Target 2.3% of the screen area covered by detected person
+FWD_POINT = 0.36 # Target detected person height to 36% of screen height
 
 
 class Follow():
@@ -34,21 +34,24 @@ class Follow():
         self.pilot = System(ip, port, serial is not None, serial)
         self.controller = Controller(YAW_POINT, FWD_POINT)
         self.is_follow_on = True
+        self.is_keyboard_control_on = True
 
 
     async def run(self):
         await self.connect()
 
         with mp_pose.Pose() as pose:
+            self.pose = pose
             while True:
                 self.p1, self.p2 = await self.__process_image(pose)
-                await self.__on_new_image()
                 await self.__offboard_control(self.p1, self.p2)
+                await self.__on_new_image()
 
-                try:
-                    await self.__manual_input_control(pose)
-                except KeyboardInterrupt:
-                    break
+                if self.is_keyboard_control_on:
+                    try:
+                        await self.__manual_input_control(pose)
+                    except KeyboardInterrupt:
+                        break
                 
                 await asyncio.sleep(0.1)
 
@@ -131,7 +134,10 @@ class Follow():
 
     async def __on_new_image(self):
         for event in self.image_events:
-            await event(self.p1, self.p2)
+            try:
+                await event(self.p1, self.p2)
+            except Exception as e:
+                self.log.error(e)
 
 
 def main(ip="", simulator=None, use_realsense=False, serial=None, log_to_file=False, port=None):

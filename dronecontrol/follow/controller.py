@@ -7,12 +7,12 @@ class Controller:
 
     MAX_FWD_VEL = 1
     MAX_YAW_VEL = 5
-    MAX_AREA_VARIANCE = 2
-    ALLOWED_ERROR = 0.03
+    MAX_HEIGHT_VARIANCE = 2
+    ALLOWED_ERROR = 0.02
     ZEROES = np.asarray([0, 0])
     ONES = np.asarray([1, 1])
 
-    def __init__(self, target_x, area_percentage) -> None:
+    def __init__(self, target_x, target_height) -> None:
         self.yaw_pid = PID(30, .10, 0.01)
         self.fwd_pid = PID(.5, .005, 0.001)
         
@@ -20,8 +20,8 @@ class Controller:
         self.fwd_pid.setSampleTime(0.01)
 
         self.yaw_pid.SetPoint = target_x
-        self.fwd_pid.SetPoint = area_percentage
-        self.prev_fwd_feedback = area_percentage
+        self.fwd_pid.SetPoint = target_height
+        self.prev_fwd_feedback = target_height
 
         self.reset()
 
@@ -70,6 +70,18 @@ class Controller:
         self.last_yaw_vel = 0
         self.last_fwd_vel = 0
 
+    
+    def set_yaw_gains(self, kp, ki, kd):
+        self.yaw_pid.setKp(kp)
+        self.yaw_pid.setKi(ki)
+        self.yaw_pid.setKd(kd)
+    
+
+    def set_fwd_gains(self, kp, ki, kd):
+        self.fwd_pid.setKp(kp)
+        self.fwd_pid.setKi(ki)
+        self.fwd_pid.setKd(kd)
+
 
     def get_yaw_error(self, p1, p2):
         current = self.__get_yaw_point_from_box(p1, p2)
@@ -95,18 +107,18 @@ class Controller:
         
 
     def __get_fwd_point_from_box(self, p1, p2):
-        area = (p2[0] - p1[0]) * (p2[1] - p1[1]) * 100
+        height = p2[1] - p1[1]
 
-        # Smooth input to adjust for sudden changes in detected area
-        # that differ greatly from the target area
-        error = area - self.fwd_pid.SetPoint
-        diff = area - self.prev_fwd_feedback
-        if error > self.MAX_AREA_VARIANCE and diff > self.MAX_AREA_VARIANCE:
-            input = self.fwd_pid.SetPoint + self.MAX_AREA_VARIANCE
-        elif error < -self.MAX_AREA_VARIANCE and diff < -self.MAX_AREA_VARIANCE:
-            input = self.fwd_pid.SetPoint - self.MAX_AREA_VARIANCE
+        # Smooth input to adjust for sudden changes in detected height
+        # that differ greatly from the target height
+        error = height - self.fwd_pid.SetPoint
+        diff = height - self.prev_fwd_feedback
+        if error > self.MAX_HEIGHT_VARIANCE and diff > self.MAX_HEIGHT_VARIANCE:
+            input = self.fwd_pid.SetPoint + self.MAX_HEIGHT_VARIANCE
+        elif error < -self.MAX_HEIGHT_VARIANCE and diff < -self.MAX_HEIGHT_VARIANCE:
+            input = self.fwd_pid.SetPoint - self.MAX_HEIGHT_VARIANCE
         else:
-            input = area
+            input = height
         self.prev_fwd_feedback = input
         
         return input

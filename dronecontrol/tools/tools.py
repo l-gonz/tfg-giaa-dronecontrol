@@ -2,6 +2,7 @@ import traceback
 import asyncio
 from dronecontrol.tools.test_camera import ImageDetection, VideoCamera
 from dronecontrol.tools.test_controller import ControlTest
+from dronecontrol.tools.tune_controller import TunePIDController
 
 
 def test_camera(use_simulator, use_hardware, use_wsl, use_realsense, use_hands, use_pose,
@@ -22,6 +23,20 @@ def test_camera(use_simulator, use_hardware, use_wsl, use_realsense, use_hands, 
 
 def test_controller(is_rotation, data_file):
     control_test = ControlTest(is_rotation, data_file)
+    try:
+        asyncio.run(control_test.run())
+    except asyncio.CancelledError:
+        control_test.log.warning("Cancel program run")
+    except KeyboardInterrupt:
+        control_test.log.warning("Cancelled with KeyboardInterrupt")
+    except:
+        traceback.print_exc()
+    finally:
+        control_test.close()
+
+
+def tune_pid():
+    control_test = TunePIDController()
     try:
         asyncio.run(control_test.run())
     except asyncio.CancelledError:

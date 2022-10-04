@@ -70,7 +70,8 @@ class VideoCamera:
 
                 if self.pose_detection:
                     results = self.pose_detection.process(self.img)
-                    detect(results, raw_img)
+                    p1, p2 = detect(results, raw_img)
+                    self.log.info(f"Yaw feedback: {(p1 + (p2 - p1) / 2)[0]}, fwd feedback {p2[1] - p1[1]}")
 
             utils.write_text_to_image(raw_img, f"Mode {self.mode}: {'' if self.is_recording else 'not '} recording", 0)
             utils.write_text_to_image(raw_img, f"FPS: {round(1.0 / (time.time() - self.last_run_time))}")
@@ -88,7 +89,7 @@ class VideoCamera:
             if pilot_task and pilot_task.done():
                 break
             
-            await asyncio.sleep(1 / 30)
+            await asyncio.sleep(1 / 10)
 
         if pilot_task:
             if not pilot_task.done():

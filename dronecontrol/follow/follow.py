@@ -3,6 +3,7 @@ import traceback
 import asyncio
 import cv2
 import mediapipe as mp
+import numpy as np
 
 from mediapipe.python.solution_base import SolutionBase
 from mavsdk.action import ActionError
@@ -17,6 +18,7 @@ mp_pose = mp.solutions.pose
 
 YAW_POINT = 0.5 # Target mid-point of horizontal axis
 FWD_POINT = 0.36 # Target detected person height to 36% of screen height
+# Use 0.5 for real flight
 
 
 class Follow():
@@ -35,6 +37,16 @@ class Follow():
         self.controller = Controller(YAW_POINT, FWD_POINT)
         self.is_follow_on = True
         self.is_keyboard_control_on = True
+        self.measures = {
+            "proc_image": [],
+            "off_control": [],
+            "image_event": [],
+            "input": [],
+            "end_sleep": [],
+            "sub_image_1": [],
+            "sub_image_2": [],
+            "sub_image_3": [],
+        }
 
 
     async def run(self):
@@ -43,19 +55,19 @@ class Follow():
         with mp_pose.Pose() as pose:
             self.pose = pose
             while True:
-                self.p1, self.p2 = await self.__process_image(pose)
-                await self.__offboard_control(self.p1, self.p2)
-                await self.__on_new_image()
+                self.p1, self.p2 = await utils.measure(self.__process_image, self.measures["proc_image"], True, pose)
+                await utils.measure(self.__offboard_control, self.measures["off_control"], True, self.p1, self.p2)
+                await utils.measure(self.__on_new_image, self.measures["image_event"], True)
 
                 if self.is_keyboard_control_on:
                     try:
-                        await self.__manual_input_control(pose)
+                        await utils.measure(self.__manual_input_control, self.measures["input"], True, pose)
                     except KeyboardInterrupt:
                         break
                 
-                await asyncio.sleep(0.1)
-
+                await utils.measure(asyncio.sleep, self.measures["end_sleep"], True, 0.001)
     
+
     async def connect(self):
         try:
             await self.pilot.connect()
@@ -68,6 +80,15 @@ class Follow():
         self.image_events.append(func)
 
 
+    def log_measures(self):
+        for i, key in enumerate(self.measures):
+            if i == 0:
+                self.log.info(f"Timing statistics for {len(self.measures[key])} loops")
+
+            if self.measures[key]:
+                self.log.info(f"{i} - {key}: mean {np.mean(self.measures[key])} var {np.var(self.measures[key])}")
+            self.measures[key] = []
+
     def close(self):
         self.pilot.close()
         utils.close_file_logger(self.file_log)
@@ -75,17 +96,19 @@ class Follow():
         self.source.close()
         while cv2.waitKey(200) == 0:
             continue
+
+        self.log_measures()
                 
 
     async def __process_image(self, pose):
-        image = self.source.get_frame()
+        image = await utils.measure(self.source.get_frame, self.measures['sub_image_1'], False)
         try:
-            self.results = pose.process(image)
+            self.results = await utils.measure(pose.process, self.measures['sub_image_2'], False, image)
         except Exception as e:
             self.log.error("Image error: " + str(e))
             self.results.pose_landmarks = None
 
-        p1, p2 = image_processing.detect(self.results, image)
+        p1, p2 = await utils.measure(image_processing.detect, self.measures['sub_image_3'], False, self.results, image)
         utils.write_text_to_image(image, f"FPS: {round(1.0 / (time.time() - self.last_run_time))}", 0)
         self.last_run_time = time.time()
         cv2.imshow("Camera", image)
@@ -97,13 +120,13 @@ class Follow():
     async def __fly(self, yaw, fwd):
         await self.pilot.set_velocity(forward=fwd, yaw=yaw)
         if fwd == 0: return
-        await asyncio.sleep(0.25)
-        await self.pilot.set_velocity()
-        await asyncio.sleep(0.1)
+        # await asyncio.sleep(0.25)
+        # await self.pilot.set_velocity()
+        # await asyncio.sleep(0.1)
 
 
     async def __offboard_control(self, p1, p2):
-        if await self.pilot.is_offboard() and self.is_follow_on:
+        if await self.pilot.is_offboard(True) and self.is_follow_on:
             yaw, fwd = self.controller.control(p1, p2)
             self.log.info(f"Yaw: ({yaw}), Fwd: ({fwd})")
             await self.__fly(yaw, fwd)

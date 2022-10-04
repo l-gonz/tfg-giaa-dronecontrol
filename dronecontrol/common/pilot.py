@@ -1,6 +1,6 @@
 import asyncio
 import typing
-
+import time
 import mavsdk
 from mavsdk.action import ActionError
 from mavsdk.telemetry import LandedState, FlightMode
@@ -11,7 +11,7 @@ from dronecontrol.common import utils
 
 class Action(typing.NamedTuple):
     func: typing.Callable
-    params: dict
+    args: dict
 
 
 class System():
@@ -25,6 +25,7 @@ class System():
     DEFAULT_SERIAL_ADDRESS = "/dev/ttyUSB0"
     DEFAULT_UDP_PORT = 14540
     TIMEOUT = 15
+    OFFBOARD_POLL_TIME = 2
 
 
     def __init__(self, ip=None, port=None, use_serial=False, serial_address=None):
@@ -44,6 +45,8 @@ class System():
         self.mav = mavsdk.System()
         self.log = utils.make_stdout_logger(__name__)
 
+        self.last_offboard_poll = 0
+
 
     def close(self):
         del self.mav
@@ -57,7 +60,7 @@ class System():
         until they are finished.
         The loop will sleep if the queue is empty.
         """
-
+        #TODO: Rename to run_queue, move connect out of loop, use in follow
         try:
             await self.connect()
         except asyncio.exceptions.CancelledError:
@@ -73,7 +76,7 @@ class System():
                     action = self.actions.pop(0)
                     self.log.info("Execute action: %s", action.func.__name__)
                     try:
-                        await asyncio.wait_for(action.func(self, **action.params), timeout=10)
+                        await asyncio.wait_for(action.func(self, **action.args), timeout=10)
                     except asyncio.exceptions.TimeoutError:
                         self.log.warning(f"Time out waiting for {action.func.__name__}")
                 else:
@@ -104,8 +107,9 @@ class System():
 
 
     async def connect(self):
-        """Connect to mavsdk server."""
-        # Triggers TimeoutError if it can't connect
+        """Connect to mavsdk server.
+           Raises a TimeoutError if it is not possible to establish connection.
+        """
         
         if self.serial:
             address = f"serial://{self.serial}"
@@ -113,17 +117,17 @@ class System():
             address = f"udp://{self.ip if self.ip else ''}:{self.port}"
         self.log.info("Waiting for drone to connect on address " + address)
         await asyncio.wait_for(self.mav.connect(system_address=address), timeout=self.TIMEOUT)
+        self.log.info("Connection established!")
 
         async for state in self.mav.core.connection_state():
             if state.is_connected:
-                self.log.debug("Drone discovered!")
                 break
 
-        self.log.debug("Waiting for drone to have a global position estimate...")
+        # Wait for drone to have a global position estimate
         async for health in self.mav.telemetry.health():
             if health.is_global_position_ok:
-                self.log.debug("Global position estimate ok")
                 break
+
         self.log.info("System ready")
         self.is_ready = True
 
@@ -197,6 +201,7 @@ class System():
             await self.return_home()
             return
 
+        self.is_offboard_cached = True
         self.log.info("System in offboard mode")
 
     
@@ -210,6 +215,7 @@ class System():
             self.log.error(f"Stopping offboard mode failed with error code: {error._result.result}")
             return
 
+        self.is_offboard_cached = False
         self.log.info("System exited offboard mode")
 
 
@@ -222,7 +228,7 @@ class System():
 
     async def set_velocity(self, forward=0.0, right=0.0, up=0.0, yaw=0.0):
         """Set the system's velocity in body coordinates."""
-        if not await self.is_offboard():
+        if not await self.is_offboard(True):
             self.log.warning("System is not in offboard move, it cannot move")
         else:
             await self.mav.offboard.set_velocity_body(
@@ -231,7 +237,7 @@ class System():
     
     async def set_position_ned_yaw(self, position: PositionNedYaw):
         """Move the system to a target position."""
-        if not await self.is_offboard():
+        if not await self.is_offboard(True):
             self.log.warning("System is not in offboard move, it cannot move")
         else:
             await self.mav.offboard.set_position_ned(position)
@@ -283,8 +289,12 @@ class System():
         return await System.get_async_generated(self.mav.telemetry.flight_mode())
 
     
-    async def is_offboard(self):
-        return await self.get_flight_mode() == FlightMode.OFFBOARD
+    async def is_offboard(self, cache_result=False):
+        if not cache_result or time.time() - self.last_offboard_poll > self.OFFBOARD_POLL_TIME:
+            self.is_offboard_cached = await self.get_flight_mode() == FlightMode.OFFBOARD
+            self.last_offboard_poll = time.time()
+        
+        return self.is_offboard_cached
 
 
     async def __landing_finished(self):

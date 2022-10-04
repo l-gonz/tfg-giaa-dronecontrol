@@ -3,6 +3,7 @@ import logging
 import typing
 import cv2
 import numpy
+import time
 import matplotlib.pyplot as plt
 from datetime import datetime
 from mediapipe.python.solution_base import SolutionBase
@@ -155,27 +156,47 @@ def keyboard_control(key: int):
         log.warning(f"Key {chr(key)}:{key} is not bound to any action.")
 
 
-def plot(x, y, block=True, title="TEST PID", xlabel="time (s)", ylabel="PID (PV)"):
+def plot(x, y, subplots=None, block=True, title="TEST PID", xlabel="time (s)", ylabel="PID (PV)", legend=None):
         if len(x) == 0:
             return
         
         x = numpy.array(x, dtype=object)
         y = numpy.array(y, dtype=object)
         plt.figure()
-
-        if x.shape[0] != y.shape[0]:
-            for y_data in y:
-                plt.plot(x, y_data)
-        elif x.shape == y.shape:
-            for i in range(x.shape[0]):
-                plt.plot(x[i], y[i])
-        else:
-            raise Exception("Unmatched data")
-
-
         plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
+        plt.grid(True)
         plt.title(title)
 
-        plt.grid(True)
+        if subplots:
+            count = 0
+            for i, subplot in enumerate(subplots):
+                plt.subplot(len(subplots), 1, i+1)
+                plt.plot(x[:], numpy.transpose(y[count:count+subplot]))
+                plt.grid(True)
+                plt.ylabel(ylabel[i])
+                count += subplot
+        else:
+            if x.shape[0] != y.shape[0]:
+                for y_data in y:
+                    plt.plot(x, y_data)
+            elif x.shape == y.shape:
+                for i in range(x.shape[0]):
+                    plt.plot(x[i], y[i])
+            else:
+                raise Exception("Unmatched data")
+            plt.ylabel(ylabel)
+
+        if legend:
+            plt.legend(legend)
         plt.show(block=block)
+
+
+async def measure(func, time_list, async_call, *args):
+    start_time = time.perf_counter()
+    if async_call:
+        result = await func(*args)
+    else:
+        result = func(*args)
+    end_time = time.perf_counter()
+    time_list.append(end_time - start_time)
+    return result

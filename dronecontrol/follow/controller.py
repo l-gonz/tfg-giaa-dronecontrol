@@ -13,8 +13,8 @@ class Controller:
     ONES = np.asarray([1, 1])
 
     def __init__(self, target_x, target_height) -> None:
-        self.yaw_pid = PID(30, .10, 0.01)
-        self.fwd_pid = PID(.5, .005, 0.001)
+        self.yaw_pid = PID(115, 0.16, 60)
+        self.fwd_pid = PID(7, 0.01, 0.03)
         
         self.yaw_pid.setSampleTime(0.01)
         self.fwd_pid.setSampleTime(0.01)
@@ -47,10 +47,10 @@ class Controller:
         self._time_list.append(self.yaw_pid.current_time - self._start_time)
 
         # Stop control when close enough
-        if abs(1 - yaw_input / self.yaw_pid.SetPoint) < self.ALLOWED_ERROR:
-            yaw_vel = 0
-        if abs(1 - fwd_input / self.fwd_pid.SetPoint) < self.ALLOWED_ERROR:
-            fwd_vel = 0
+        # if abs(1 - yaw_input / self.yaw_pid.SetPoint) < self.ALLOWED_ERROR:
+        #     yaw_vel = 0
+        # if abs(1 - fwd_input / self.fwd_pid.SetPoint) < self.ALLOWED_ERROR:
+        #     fwd_vel = 0
 
         self.last_yaw_vel = yaw_vel
         self.last_fwd_vel = fwd_vel
@@ -97,7 +97,9 @@ class Controller:
     def get_fwd_data(self):
         return [self._fwd_setpoint_list, self._fwd_feedback_list, self._fwd_output_list]
 
-    def get_time_data(self):
+    def get_time_data(self, start_at_zero=False):
+        if start_at_zero:
+            return [t - self._time_list[0] for t in self._time_list]
         return self._time_list
 
     

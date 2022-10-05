@@ -131,7 +131,7 @@ class SimulatorSource(VideoSource):
         return (self.width, self.height)
 
     def get_delay(self):
-        return int(1000/60)
+        return 1
 
     def close(self):
         cv2.destroyAllWindows()

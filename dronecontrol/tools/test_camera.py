@@ -1,6 +1,5 @@
 import os
 import datetime
-import traceback
 import time
 import cv2
 import asyncio
@@ -11,6 +10,7 @@ from dronecontrol.common import utils, pilot
 from dronecontrol.common.video_source import CameraSource, SimulatorSource, RealSenseCameraSource, FileSource
 from dronecontrol.hands.graphics import HandGui
 from dronecontrol.follow.image_processing import detect
+
 
 mp_pose = mp.solutions.pose
 
@@ -52,7 +52,7 @@ class VideoCamera:
         self.last_run_time = time.time()
 
         self.hand_detection = HandGui(source = self.source) if image_detection == ImageDetection.HAND else None
-        self.pose_detection = mp_pose.Pose(model_complexity=0) if image_detection == ImageDetection.POSE else None
+        self.pose_detection = mp_pose.Pose(model_complexity=1, min_detection_confidence=0.5, min_tracking_confidence=0.5) if image_detection == ImageDetection.POSE else None
         
 
     async def run(self):
@@ -70,7 +70,8 @@ class VideoCamera:
 
                 if self.pose_detection:
                     results = self.pose_detection.process(self.img)
-                    detect(results, raw_img)
+                    p1, p2 = detect(results, raw_img)
+                    self.log.info(f"Yaw feedback: {(p1 + (p2 - p1) / 2)[0]}, fwd feedback {p2[1] - p1[1]}")
 
             utils.write_text_to_image(raw_img, f"Mode {self.mode}: {'' if self.is_recording else 'not '} recording", 0)
             utils.write_text_to_image(raw_img, f"FPS: {round(1.0 / (time.time() - self.last_run_time))}")
@@ -88,7 +89,7 @@ class VideoCamera:
             if pilot_task and pilot_task.done():
                 break
             
-            await asyncio.sleep(1 / 30)
+            await asyncio.sleep(1 / 10)
 
         if pilot_task:
             if not pilot_task.done():
@@ -159,24 +160,3 @@ class VideoCamera:
     @staticmethod
     def __get_formatted_date():
         return datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-
-
-
-def test_camera(use_simulator, use_hardware, use_wsl, use_realsense, use_hands, use_pose,
-                hardware_address=None, simulator_ip=None, file=None):
-    detection = ImageDetection.HAND if use_hands else (ImageDetection.POSE if use_pose else ImageDetection.NONE)
-    camera = VideoCamera(use_simulator, use_hardware, use_wsl, use_realsense, detection, hardware_address, simulator_ip, file)
-    try:
-        asyncio.run(camera.run())
-    except asyncio.CancelledError:
-        camera.log.warning("Cancel program run")
-    except KeyboardInterrupt:
-        camera.log.warning("Cancelled with KeyboardInterrupt")
-    except:
-        traceback.print_exc()
-    finally:
-        camera.close()
-
-
-if __name__ == "__main__":
-    test_camera(False, False, False)

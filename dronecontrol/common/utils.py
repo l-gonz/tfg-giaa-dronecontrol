@@ -2,10 +2,13 @@ import os
 import logging
 import typing
 import cv2
+import numpy
+import time
+import matplotlib.pyplot as plt
 from datetime import datetime
 from mediapipe.python.solution_base import SolutionBase
 
-from dronecontrol import tools
+from dronecontrol.tools import tools
 from dronecontrol.common import pilot
 
 
@@ -126,7 +129,7 @@ def keyboard_control(key: int):
         return pilot.System.kill_engines
     elif key == ord('h'): # Return home
         return pilot.System.return_home
-    elif key == ord('s'): # Stop
+    elif key == ord('0'): # Stop
         return pilot.System.set_velocity
     elif key == ord('t'): # Take-off
         return pilot.System.takeoff
@@ -134,6 +137,14 @@ def keyboard_control(key: int):
         return pilot.System.land
     elif key == ord('o'): # Toggle offboard
         return pilot.System.toggle_offboard
+    elif key == ord('w'): # Forward
+        return pilot.System.move_fwd_positive
+    elif key == ord('a'): # Yaw left
+        return pilot.System.move_yaw_left
+    elif key == ord('s'): # Forward
+        return pilot.System.move_fwd_positive
+    elif key == ord('d'): # Yaw right
+        return pilot.System.move_yaw_right
     elif key == ord(' '): # Take picture / start video
         return tools.VideoCamera.trigger
     elif key == ord('<'): # Picture <> video
@@ -142,4 +153,50 @@ def keyboard_control(key: int):
         return SolutionBase.process
 
     else:
-        log.warning(f"Key {chr(key)} is not bound to any action.")
+        log.warning(f"Key {chr(key)}:{key} is not bound to any action.")
+
+
+def plot(x, y, subplots=None, block=True, title="TEST PID", xlabel="time (s)", ylabel="PID (PV)", legend=None):
+        if len(x) == 0:
+            return
+        
+        x = numpy.array(x, dtype=object)
+        y = numpy.array(y, dtype=object)
+        plt.figure()
+        plt.xlabel(xlabel)
+        plt.grid(True)
+        plt.title(title)
+
+        if subplots:
+            count = 0
+            for i, subplot in enumerate(subplots):
+                plt.subplot(len(subplots), 1, i+1)
+                plt.plot(x[:], numpy.transpose(y[count:count+subplot]))
+                plt.grid(True)
+                plt.ylabel(ylabel[i])
+                count += subplot
+        else:
+            if x.shape[0] != y.shape[0]:
+                for y_data in y:
+                    plt.plot(x, y_data)
+            elif x.shape == y.shape:
+                for i in range(x.shape[0]):
+                    plt.plot(x[i], y[i])
+            else:
+                raise Exception("Unmatched data")
+            plt.ylabel(ylabel)
+
+        if legend:
+            plt.legend(legend)
+        plt.show(block=block)
+
+
+async def measure(func, time_list, async_call, *args):
+    start_time = time.perf_counter()
+    if async_call:
+        result = await func(*args)
+    else:
+        result = func(*args)
+    end_time = time.perf_counter()
+    time_list.append(end_time - start_time)
+    return result

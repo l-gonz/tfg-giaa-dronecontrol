@@ -1,6 +1,6 @@
 import click
-from dronecontrol import tools as tools_module
-from dronecontrol.follow import main as follow_entry
+from dronecontrol.tools import tools as tools_module
+from dronecontrol.follow import follow as follow_entry
 from dronecontrol.hands import mapper as hands_entry
 
 
@@ -12,7 +12,7 @@ def main():
 
 @main.command()
 @click.option("-p", "--port", type=int, help="port for UDP connections")
-@click.option("--serial", is_flag=False, flag_value="", help="connect to drone system through serial, default device is /dev/ttyUSB0")
+@click.option("-s", "--serial", is_flag=False, flag_value="", help="connect to drone system through serial, default device is /dev/ttyUSB0")
 @click.option("-f", "--file", type=click.Path(exists=True, readable=True), help="file to use as source instead of the camera")
 @click.option("-l", "--log", is_flag=True, help="log important info and save video")
 def hand(port, serial, file, log):
@@ -43,6 +43,16 @@ def tools():
 def test_camera(simulator, hardware, use_wsl, use_realsense, use_hands, use_pose, file):
     tools_module.test_camera(simulator is not None, hardware is not None, use_wsl, use_realsense, 
                              use_hands, use_pose, hardware, simulator, file)
+
+@tools.command()
+@click.option("--yaw/--forward", default=True, help="test the controller yaw or forward movement")
+@click.option("-f", "--file", default=None, help="file name to use as data source")
+def test_controller(yaw, file):
+    tools_module.test_controller(yaw, file)
+
+@tools.command()
+def tune():
+    tools_module.tune_pid()
 
 if __name__ == "__main__":
     main()

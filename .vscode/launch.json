@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "File",
             "type": "python",
             "request": "launch",
             "program": "${file}",
@@ -13,7 +13,7 @@
             "justMyCode": true
         },
         {
-            "name": "Python Hand",
+            "name": "Hand",
             "type": "python",
             "request": "launch",
             "module": "dronecontrol",
@@ -25,17 +25,20 @@
             ]
         },
         {
-            "name": "Python Follow",
+            "name": "Follow",
             "type": "python",
             "request": "launch",
             "module": "dronecontrol",
             "justMyCode": true,
             "args": [
-                "follow"
+                "follow",
+                "--sim",
+                "-p",
+                "14550"
             ]
         },
         {
-            "name": "Python Video",
+            "name": "Video",
             "type": "python",
             "request": "launch",
             "module": "dronecontrol",
@@ -44,6 +47,28 @@
                 "tools",
                 "test-camera",
                 "-rs"
+            ]
+        },
+        {
+            "name": "Control",
+            "type": "python",
+            "request": "launch",
+            "module": "dronecontrol",
+            "justMyCode": true,
+            "args": [
+                "tools",
+                "test-controller"
+            ]
+        },
+        {
+            "name": "Tune",
+            "type": "python",
+            "request": "launch",
+            "module": "dronecontrol",
+            "justMyCode": true,
+            "args": [
+                "tools",
+                "tune"
             ]
         }
     ]

@@ -33,7 +33,7 @@ class Follow():
             simulator = utils.get_wsl_host_ip()
         self.source = self.__get_source(simulator, simulator is not None, use_realsense)
 
-        self.pilot = System(ip, port, serial is not None, serial)
+        self.pilot = System(ip, port, serial is not None, serial, -1)
         self.controller = Controller(YAW_POINT, FWD_POINT)
         self.is_follow_on = True
         self.is_keyboard_control_on = True
@@ -50,7 +50,11 @@ class Follow():
 
 
     async def run(self):
-        await self.connect()
+        try:
+            await self.pilot.connect()
+        except asyncio.exceptions.TimeoutError:
+            self.log.error("Connection time-out")
+            return
 
         with mp_pose.Pose() as pose:
             self.pose = pose
@@ -66,14 +70,6 @@ class Follow():
                         break
                 
                 await utils.measure(asyncio.sleep, self.measures["end_sleep"], True, 0.001)
-    
-
-    async def connect(self):
-        try:
-            await self.pilot.connect()
-        except asyncio.exceptions.TimeoutError:
-            self.log.error("Connection time-out")
-            return
 
 
     def subscribe_to_image(self, func):
@@ -176,5 +172,4 @@ def main(ip="", simulator=None, use_realsense=False, serial=None, log_to_file=Fa
     except:
         traceback.print_exc()
         
-    utils.plot(follow.controller.get_time_data(), *follow.controller.get_yaw_data())
     follow.close()

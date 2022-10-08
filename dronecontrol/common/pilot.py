@@ -25,10 +25,9 @@ class System():
     DEFAULT_SERIAL_ADDRESS = "/dev/ttyUSB0"
     DEFAULT_UDP_PORT = 14540
     TIMEOUT = 15
-    OFFBOARD_POLL_TIME = 2
 
 
-    def __init__(self, ip=None, port=None, use_serial=False, serial_address=None):
+    def __init__(self, ip=None, port=None, use_serial=False, serial_address=None, offboard_poll_time=2):
         """
         Connection parameters to PX4 through MAVlink
 
@@ -45,7 +44,9 @@ class System():
         self.mav = mavsdk.System()
         self.log = utils.make_stdout_logger(__name__)
 
+        self.offboard_poll_time = offboard_poll_time
         self.last_offboard_poll = 0
+        self.is_offboard_cached = False
 
 
     def close(self):
@@ -290,7 +291,8 @@ class System():
 
     
     async def is_offboard(self, cache_result=False):
-        if not cache_result or time.time() - self.last_offboard_poll > self.OFFBOARD_POLL_TIME:
+        if not cache_result or (self.offboard_poll_time > 0
+           and time.time() - self.last_offboard_poll > self.offboard_poll_time):
             self.is_offboard_cached = await self.get_flight_mode() == FlightMode.OFFBOARD
             self.last_offboard_poll = time.time()
         

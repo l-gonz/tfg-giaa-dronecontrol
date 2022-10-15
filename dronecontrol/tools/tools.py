@@ -5,10 +5,10 @@ from dronecontrol.tools.test_controller import ControlTest
 from dronecontrol.tools.tune_controller import TunePIDController
 
 
-def test_camera(use_simulator, use_hardware, use_wsl, use_realsense, use_hands, use_pose,
+def test_camera(use_simulator, use_hardware, use_wsl, use_camera, use_hands, use_pose,
                 hardware_address=None, simulator_ip=None, file=None):
     detection = ImageDetection.HAND if use_hands else (ImageDetection.POSE if use_pose else ImageDetection.NONE)
-    camera = VideoCamera(use_simulator, use_hardware, use_wsl, use_realsense, detection, hardware_address, simulator_ip, file)
+    camera = VideoCamera(use_simulator, use_hardware, use_wsl, use_camera, detection, hardware_address, simulator_ip, file)
     try:
         asyncio.run(camera.run())
     except asyncio.CancelledError:

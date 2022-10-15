@@ -28,7 +28,7 @@ class VideoCamera:
     IMAGE_FOLDER = 'img'
     VIDEO_CODE = cv2.VideoWriter_fourcc('M','J','P','G')
 
-    def __init__(self, use_simulator, use_hardware, use_wsl, use_realsense, 
+    def __init__(self, use_simulator, use_hardware, use_wsl, use_camera, 
                  image_detection, hardware_address=None, simulator_ip=None,
                  file=None):
         self.log = utils.make_stdout_logger(__name__)
@@ -36,8 +36,8 @@ class VideoCamera:
         if use_simulator or use_hardware:
             self.pilot = pilot.System(use_serial=use_hardware, serial_address=hardware_address)
 
-        if use_realsense:
-            self.source = RealSenseCameraSource()
+        if use_camera:
+            self.source = CameraSource()
         elif file:
             self.source = FileSource(file)
         elif use_simulator:

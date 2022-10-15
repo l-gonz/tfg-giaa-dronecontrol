@@ -37,12 +37,12 @@ def tools():
 @click.option("-s", "--sim", "simulator", is_flag=False, flag_value="", help="attach to a simulator through UDP, optionally provide the IP the simulator listens at")
 @click.option("-r", "--hardware", is_flag=False, flag_value="", help="attach to a hardware drone through serial, optionally provide the address of the device that connects to PX4")
 @click.option("-w", "--wsl", "use_wsl", is_flag=True, help="expects the program to run on a Linux WSL OS")
-@click.option("-rs", "--realsense", "use_realsense", is_flag=True, help="use a RealSense camera as source")
+@click.option("-c", "--camera", "use_camera", is_flag=True, help="use a physical camera as source")
 @click.option("-h", "--hand-detection", "use_hands", is_flag=True, help="use hand detection for image processing")
 @click.option("-p", "--pose-detection", "use_pose", is_flag=True, help="use pose detection for image processing")
 @click.option("-f", "--file", help="file name to use as video source")
-def test_camera(simulator, hardware, use_wsl, use_realsense, use_hands, use_pose, file):
-    tools_module.test_camera(simulator is not None, hardware is not None, use_wsl, use_realsense, 
+def test_camera(simulator, hardware, use_wsl, use_camera, use_hands, use_pose, file):
+    tools_module.test_camera(simulator is not None, hardware is not None, use_wsl, use_camera, 
                              use_hands, use_pose, hardware, simulator, file)
 
 @tools.command()

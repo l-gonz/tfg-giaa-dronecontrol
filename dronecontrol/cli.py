@@ -1,4 +1,5 @@
 import click
+import re
 from dronecontrol.tools import tools as tools_module
 from dronecontrol.follow import follow as follow_entry
 from dronecontrol.hands import mapper as hands_entry
@@ -51,8 +52,15 @@ def test_controller(yaw, file):
     tools_module.test_controller(yaw, file)
 
 @tools.command()
-def tune():
-    tools_module.tune_pid()
+@click.option("--yaw/--forward", default=True, help="test the controller yaw or forward movement")
+@click.option("-p", "--kp-values", prompt=True, help="values to test for Kp parameter")
+@click.option("-i", "--ki-values", prompt=True, help="values to test for Ki parameter")
+@click.option("-d", "--kd-values", prompt=True, help="values to test for Kd parameter")
+def tune(yaw, kp_values, ki_values, kd_values):
+    kp_values = [float(n) for n in re.sub('[^\.\d\s]', '', kp_values).split(" ")]
+    ki_values = [float(n) for n in re.sub('[^\.\d\s]', '', ki_values).split(" ")]
+    kd_values = [float(n) for n in re.sub('[^\.\d\s]', '', kd_values).split(" ")]
+    tools_module.tune_pid(yaw, kp_values, ki_values, kd_values)
 
 if __name__ == "__main__":
     main()

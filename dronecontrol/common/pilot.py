@@ -133,6 +133,10 @@ class System():
         self.is_ready = True
 
 
+    async def is_connected(self):
+        return (await System.get_async_generated(self.mav.core.connection_state())).is_connected
+
+
     async def kill_engines(self):
         await self.mav.action.kill()
 

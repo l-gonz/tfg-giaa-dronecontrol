@@ -50,11 +50,12 @@ class Follow():
 
 
     async def run(self):
-        try:
-            await self.pilot.connect()
-        except asyncio.exceptions.TimeoutError:
-            self.log.error("Connection time-out")
-            return
+        if not await self.pilot.is_connected():
+            try:
+                await self.pilot.connect()
+            except asyncio.exceptions.TimeoutError:
+                self.log.error("Connection time-out")
+                return
 
         with mp_pose.Pose() as pose:
             self.pose = pose
@@ -107,7 +108,11 @@ class Follow():
         p1, p2 = await utils.measure(image_processing.detect, self.measures['sub_image_3'], False, self.results, image)
         utils.write_text_to_image(image, f"FPS: {round(1.0 / (time.time() - self.last_run_time))}", 0)
         self.last_run_time = time.time()
-        cv2.imshow("Camera", image)
+        try:
+            cv2.imshow("Camera", image)
+        except cv2.error as e:
+            self.log.error("Error rendering image:\n" + e)
+
 
         await utils.log_system_info(self.file_log, self.pilot, self.results.pose_landmarks)
         return p1, p2

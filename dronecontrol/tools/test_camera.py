@@ -7,7 +7,7 @@ from enum import Enum
 import mediapipe as mp
 
 from dronecontrol.common import utils, pilot
-from dronecontrol.common.video_source import CameraSource, SimulatorSource, RealSenseCameraSource, FileSource
+from dronecontrol.common.video_source import CameraSource, SimulatorSource, FileSource
 from dronecontrol.hands.graphics import HandGui
 from dronecontrol.follow.image_processing import detect
 
@@ -34,7 +34,7 @@ class VideoCamera:
         self.log = utils.make_stdout_logger(__name__)
         self.pilot = None
         if use_simulator or use_hardware:
-            self.pilot = pilot.System(use_serial=use_hardware, serial_address=hardware_address)
+            self.pilot = pilot.System(ip=simulator_ip, use_serial=use_hardware, serial_address=hardware_address)
 
         if use_camera:
             self.source = CameraSource()
@@ -71,9 +71,9 @@ class VideoCamera:
                 if self.pose_detection:
                     results = self.pose_detection.process(self.img)
                     p1, p2 = detect(results, raw_img)
-                    self.log.info(f"Yaw feedback: {(p1 + (p2 - p1) / 2)[0]}, fwd feedback {p2[1] - p1[1]}")
+                    self.log.info(f"Yaw input: {(p1 + (p2 - p1) / 2)[0]}, fwd input {p2[1] - p1[1]}")
 
-            utils.write_text_to_image(raw_img, f"Mode {self.mode}: {'' if self.is_recording else 'not '} recording", 0)
+            utils.write_text_to_image(raw_img, f"Mode {self.mode.name}: {'' if self.is_recording else 'not '} recording", 0)
             utils.write_text_to_image(raw_img, f"FPS: {round(1.0 / (time.time() - self.last_run_time))}")
             self.last_run_time = time.time()
             cv2.imshow("Image", raw_img)

@@ -6,6 +6,7 @@ from mavsdk.action import ActionError
 from mediapipe.python.solution_base import SolutionBase
 
 from dronecontrol.common import utils
+from dronecontrol.follow.controller import Controller
 from dronecontrol.follow.follow import Follow
 from dronecontrol.common.pilot import System
 
@@ -13,9 +14,9 @@ from dronecontrol.common.pilot import System
 class TunePIDController:
 
     START_POS = PositionNedYaw(0, 0, -2.5, 3)
-    MEASURE_TIME = 10
+    MEASURE_TIME = 20
 
-    def __init__(self, tune_yaw=True, kp_values=[], ki_values=[], kd_values=[]):
+    def __init__(self, tune_yaw=True, manual=False, kp_values=[], ki_values=[], kd_values=[]):
         self.log = utils.make_stdout_logger(__name__)
         self.follow = Follow(port=14550, simulator="") 
 
@@ -24,14 +25,16 @@ class TunePIDController:
         self.follow.pilot.offboard_poll_time = -1
         self.first_time = True
 
+        self.manual = manual or (kp_values == [0] and ki_values == [0] and kd_values == [0])
+            
         self.save_parameter_values([kp_values, ki_values, kd_values])
         self.tune_yaw = tune_yaw
         if self.tune_yaw:
-            self.follow.controller.set_yaw_gains(self.kp_values.pop(0), self.ki_values.pop(0), self.kd_values.pop(0))
-            self.follow.controller.set_fwd_gains(0, 0, 0)
+            self.follow.controller.yaw_pid.tunings = (self.kp_values.pop(0), self.ki_values.pop(0), self.kd_values.pop(0))
+            self.follow.controller.fwd_pid.tunings = (0, 0, 0)
         else:
-            self.follow.controller.set_fwd_gains(self.kp_values.pop(0), self.ki_values.pop(0), self.kd_values.pop(0))
-            self.follow.controller.set_yaw_gains(0, 0, 0)
+            self.follow.controller.fwd_pid.tunings = (self.kp_values.pop(0), self.ki_values.pop(0), self.kd_values.pop(0))
+            self.follow.controller.yaw_pid.tunings = (0, 0, 0)
 
 
     async def run(self):
@@ -56,10 +59,11 @@ class TunePIDController:
 
 
     async def on_new_image(self, p1, p2):
-        # Wait until measures have been taken for MEASURE_TIME seconds and save the data
-        time_data = self.follow.controller.get_time_data(True)
-        if time_data and time_data[-1] > self.MEASURE_TIME:
-            await self.go_to_next_value(time_data)
+        if not self.manual:
+            # Wait until measures have been taken for MEASURE_TIME seconds and save the data
+            time_data = self.follow.controller.get_time_data(True)
+            if time_data and time_data[-1] > self.MEASURE_TIME:
+                await self.go_to_next_value(time_data)
 
         # Manual keyboard control
         key = cv2.waitKey(1)
@@ -80,7 +84,7 @@ class TunePIDController:
         # Reset position
         self.follow.is_follow_on = False
         await self.follow.pilot.set_position_ned_yaw(self.START_POS)
-        await asyncio.sleep(6)
+        await asyncio.sleep(10)
         self.follow.controller.reset()
 
         # Set next value on the controller, repeat first one for more consistent results
@@ -96,24 +100,31 @@ class TunePIDController:
     async def verify_tuning(self):
         self.follow.log_measures()
         time = self.follow.controller.get_time_data()
-        yaw_input = self.follow.controller.get_yaw_data()
-        fwd_input = self.follow.controller.get_fwd_data()
-        utils.plot(time, yaw_input, subplots=[2,1], block=False, title="Yaw input", ylabel=["H. distance", "Velocity"])
-        utils.plot(time, fwd_input, subplots=[2,1], block=False, title="Fwd input", ylabel=["Height", "Velocity"])
+        if Controller.is_pid_on(self.follow.controller.yaw_pid):
+            yaw_input = self.follow.controller.get_yaw_data()
+            self.log.info(f"Yaw parameters: {self.follow.controller.yaw_pid.tunings}")
+            utils.plot(time, yaw_input, subplots=[2,1], block=False, title="Yaw data", ylabel=["H. distance", "Velocity"])
+            utils.plot(time, self.follow.controller.get_yaw_output_detailed(), 
+                block=False, title="Yaw output", ylabel="Velocity", legend=["p", "i", "d"])
+        elif Controller.is_pid_on(self.follow.controller.fwd_pid):
+            fwd_input = self.follow.controller.get_fwd_data()
+            self.log.info(f"Fwd parameters: {self.follow.controller.fwd_pid.tunings}")
+            utils.plot(time, fwd_input, subplots=[2,1], block=False, title="Fwd input", ylabel=["Height", "Velocity"])
+            utils.plot(time, self.follow.controller.get_fwd_output_detailed(), 
+                block=False, title="Fwd output", ylabel="Velocity", legend=["p", "i", "d"])
+
+        # Reset
         self.follow.is_follow_on = False
         await self.follow.pilot.set_position_ned_yaw(self.START_POS)
-        self.follow.controller.reset()
-        self.log.info(f"Yaw parameters: Kp {self.follow.controller.yaw_pid.Kp}, Ki {self.follow.controller.yaw_pid.Ki}, Kd {self.follow.controller.yaw_pid.Kd}")
-        self.log.info(f"Fwd parameters: Kp {self.follow.controller.fwd_pid.Kp}, Ki {self.follow.controller.fwd_pid.Ki}, Kd {self.follow.controller.fwd_pid.Kd}")
         update = input("Which to update? Y/F: ")
         p = float(input("Enter Kp: "))
         i = float(input("Enter Ki: "))
         d = float(input("Enter Kd: "))
         if update.lower() == 'y':
-            self.follow.controller.set_yaw_gains(p, i, d)
+            self.follow.controller.yaw_pid.tunings = (p, i, d)
         elif update.lower() == 'f':
-            self.follow.controller.set_fwd_gains(p, i, d)
-        input("Center target, enter to continue")
+            self.follow.controller.fwd_pid.tunings = (p, i, d)
+        self.follow.controller.reset()
         
         self.follow.is_follow_on = True
 
@@ -154,23 +165,20 @@ class TunePIDController:
 
 
     def set_next_value(self):
-        controller = self.follow.controller.yaw_pid if self.tune_yaw else self.follow.controller.fwd_pid
+        pid = self.follow.controller.yaw_pid if self.tune_yaw else self.follow.controller.fwd_pid
         if len(self.target_values) > 0:
-            if self.tune_yaw:
-                self.follow.controller.set_yaw_gains(
-                    self.kp_values.pop(0) if len(self.kp_values) > 0 else controller.Kp,
-                    self.kd_values.pop(0) if len(self.kd_values) > 0 else controller.Kd,
-                    self.ki_values.pop(0) if len(self.ki_values) > 0 else controller.Ki)
-            else:
-                self.follow.controller.set_fwd_gains(
-                    self.kp_values.pop(0) if len(self.kp_values) > 0 else controller.Kp,
-                    self.kd_values.pop(0) if len(self.kd_values) > 0 else controller.Kd,
-                    self.ki_values.pop(0) if len(self.ki_values) > 0 else controller.Ki)
+            Kp, Ki, Kd = pid.tunings
+            pid.tunings = (
+                self.kp_values.pop(0) if len(self.kp_values) > 0 else Kp,
+                self.kd_values.pop(0) if len(self.kd_values) > 0 else Kd,
+                self.ki_values.pop(0) if len(self.ki_values) > 0 else Ki
+            )
             self.log.info(f"Values left {len(self.target_values)}/{len(self.legend)}")
         else:
-            utils.plot(self.time + [[0, 10]], self.feedback_data + [[controller.SetPoint, controller.SetPoint]], 
+            utils.plot(self.time + [[0, self.MEASURE_TIME]], self.feedback_data + [[pid.setpoint, pid.setpoint]], 
                        legend=self.legend + ["Target"], block=False,
-                       title="Yaw controller" if self.tune_yaw else "Forward controller", ylabel="Horizontal position")
+                       title="Yaw controller" if self.tune_yaw else "Forward controller", 
+                       ylabel="Horizontal position" if self.tune_yaw else "Height")
             utils.plot(self.time, self.speed_data, legend=self.legend, block=True,
                        title="Yaw controller" if self.tune_yaw else "Forward controller", ylabel="Velocity")
             raise KeyboardInterrupt

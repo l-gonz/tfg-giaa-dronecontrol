@@ -35,8 +35,8 @@ def test_controller(is_rotation, data_file):
         control_test.close()
 
 
-def tune_pid(tune_yaw, kp_values, ki_values, kd_values):
-    control_test = TunePIDController(tune_yaw, kp_values, ki_values, kd_values)
+def tune_pid(tune_yaw, manual, kp_values, ki_values, kd_values):
+    control_test = TunePIDController(tune_yaw, manual, kp_values, ki_values, kd_values)
     try:
         asyncio.run(control_test.run())
     except asyncio.CancelledError:

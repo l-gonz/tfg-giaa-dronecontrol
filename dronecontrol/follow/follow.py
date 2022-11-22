@@ -50,7 +50,7 @@ class Follow():
 
 
     async def run(self):
-        if not await self.pilot.is_connected():
+        if not self.pilot.is_ready:
             try:
                 await self.pilot.connect()
             except asyncio.exceptions.TimeoutError:
@@ -104,6 +104,7 @@ class Follow():
         except Exception as e:
             self.log.error("Image error: " + str(e))
             self.results.pose_landmarks = None
+            pose.process(self.source.get_blank())
 
         p1, p2 = await utils.measure(image_processing.detect, self.measures['sub_image_3'], False, self.results, image)
         utils.write_text_to_image(image, f"FPS: {round(1.0 / (time.time() - self.last_run_time))}", 0)
@@ -111,7 +112,7 @@ class Follow():
         try:
             cv2.imshow("Camera", image)
         except cv2.error as e:
-            self.log.error("Error rendering image:\n" + e)
+            self.log.error("Error rendering image:\n" + str(e))
 
 
         await utils.log_system_info(self.file_log, self.pilot, self.results.pose_landmarks)
@@ -121,9 +122,6 @@ class Follow():
     async def __fly(self, yaw, fwd):
         await self.pilot.set_velocity(forward=fwd, yaw=yaw)
         if fwd == 0: return
-        # await asyncio.sleep(0.25)
-        # await self.pilot.set_velocity()
-        # await asyncio.sleep(0.1)
 
 
     async def __offboard_control(self, p1, p2):

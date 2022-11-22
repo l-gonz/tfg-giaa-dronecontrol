@@ -1,28 +1,34 @@
-from dronecontrol.follow.pid import PID
+from simple_pid import PID
+from dronecontrol.common import utils
 
 import numpy as np
 import time
 
 class Controller:
 
-    MAX_FWD_VEL = 1
+    MAX_FWD_VEL = 0.4
     MAX_YAW_VEL = 5
     MAX_HEIGHT_VARIANCE = 2
     ALLOWED_ERROR = 0.02
     ZEROES = np.asarray([0, 0])
     ONES = np.asarray([1, 1])
 
+    DEFAULT_YAW_TUNINGS = (-50, 0, 0)
+    DEFAULT_FWD_TUNINGS = (2, 0, 0)
+
     def __init__(self, target_x, target_height) -> None:
-        self.yaw_pid = PID(115, 0.16, 60)
-        self.fwd_pid = PID(7, 0.01, 0.03)
+        self.log = utils.make_stdout_logger(__name__)
         
-        self.yaw_pid.setSampleTime(0.01)
-        self.fwd_pid.setSampleTime(0.01)
+        self.yaw_pid = PID()
+        self.yaw_pid.tunings = self.DEFAULT_YAW_TUNINGS
+        self.yaw_pid.setpoint = target_x
+        self.yaw_pid.output_limits = (-self.MAX_YAW_VEL, self.MAX_YAW_VEL)
 
-        self.yaw_pid.SetPoint = target_x
-        self.fwd_pid.SetPoint = target_height
-        self.prev_fwd_feedback = target_height
-
+        self.fwd_pid = PID()
+        self.fwd_pid.tunings = self.DEFAULT_FWD_TUNINGS
+        self.fwd_pid.setpoint = target_height
+        self.fwd_pid.output_limits = (-self.MAX_FWD_VEL, self.MAX_FWD_VEL)
+        
         self.reset()
 
     
@@ -31,20 +37,21 @@ class Controller:
             return 0, 0
 
         yaw_input = self.__get_yaw_point_from_box(p1, p2)
-        self.yaw_pid.update(yaw_input)
-        yaw_vel = self.__get_yaw_vel_from_output(self.yaw_pid.output)
+        yaw_vel = self.yaw_pid(yaw_input)
 
         fwd_input = self.__get_fwd_point_from_box(p1, p2)
-        self.fwd_pid.update(fwd_input)
-        fwd_vel = self.__get_fwd_vel_from_output(self.fwd_pid.output)
+        fwd_vel = self.fwd_pid(fwd_input)
 
-        self._yaw_setpoint_list.append(self.yaw_pid.SetPoint)
+        # Save detailed measures for visualizing data
+        self._yaw_setpoint_list.append(self.yaw_pid.setpoint)
         self._yaw_feedback_list.append(yaw_input)
         self._yaw_output_list.append(yaw_vel)
-        self._fwd_setpoint_list.append(self.fwd_pid.SetPoint)
+        self._yaw_output_detail_list.append(self.yaw_pid.components)
+        self._fwd_setpoint_list.append(self.fwd_pid.setpoint)
         self._fwd_feedback_list.append(fwd_input)
         self._fwd_output_list.append(fwd_vel)
-        self._time_list.append(self.yaw_pid.current_time - self._start_time)
+        self._fwd_output_detail_list.append(self.fwd_pid.components)
+        self._time_list.append(time.time() - self._start_time)
 
         # Stop control when close enough
         # if abs(1 - yaw_input / self.yaw_pid.SetPoint) < self.ALLOWED_ERROR:
@@ -61,41 +68,44 @@ class Controller:
         self._yaw_setpoint_list = []
         self._yaw_feedback_list = []
         self._yaw_output_list = []
+        self._yaw_output_detail_list = []
         self._fwd_setpoint_list = []
         self._fwd_feedback_list = []
         self._fwd_output_list = []
+        self._fwd_output_detail_list = []
         self._time_list = []
         self._start_time = time.time()
 
         self.last_yaw_vel = 0
         self.last_fwd_vel = 0
+        self.yaw_pid.reset()
+        self.fwd_pid.reset()
 
-    
-    def set_yaw_gains(self, kp, ki, kd):
-        self.yaw_pid.setKp(kp)
-        self.yaw_pid.setKi(ki)
-        self.yaw_pid.setKd(kd)
-    
 
-    def set_fwd_gains(self, kp, ki, kd):
-        self.fwd_pid.setKp(kp)
-        self.fwd_pid.setKi(ki)
-        self.fwd_pid.setKd(kd)
+    @staticmethod
+    def is_pid_on(pid: PID):
+        return pid.tunings != (0, 0, 0)
 
 
     def get_yaw_error(self, p1, p2):
         current = self.__get_yaw_point_from_box(p1, p2)
-        return self.yaw_pid.SetPoint - current
+        return self.yaw_pid.setpoint - current
 
     def get_fwd_error(self, p1, p2):
         current = self.__get_fwd_point_from_box(p1, p2)
-        return self.fwd_pid.SetPoint - current
+        return self.fwd_pid.setpoint - current
 
     def get_yaw_data(self):
         return [self._yaw_setpoint_list, self._yaw_feedback_list, self._yaw_output_list]
 
+    def get_yaw_output_detailed(self):
+        return list(zip(*self._yaw_output_detail_list))
+
     def get_fwd_data(self):
         return [self._fwd_setpoint_list, self._fwd_feedback_list, self._fwd_output_list]
+
+    def get_fwd_output_detailed(self):
+        return list(zip(*self._fwd_output_detail_list))
 
     def get_time_data(self, start_at_zero=False):
         if start_at_zero:
@@ -109,31 +119,7 @@ class Controller:
         
 
     def __get_fwd_point_from_box(self, p1, p2):
-        height = p2[1] - p1[1]
-
-        # Smooth input to adjust for sudden changes in detected height
-        # that differ greatly from the target height
-        error = height - self.fwd_pid.SetPoint
-        diff = height - self.prev_fwd_feedback
-        if error > self.MAX_HEIGHT_VARIANCE and diff > self.MAX_HEIGHT_VARIANCE:
-            input = self.fwd_pid.SetPoint + self.MAX_HEIGHT_VARIANCE
-        elif error < -self.MAX_HEIGHT_VARIANCE and diff < -self.MAX_HEIGHT_VARIANCE:
-            input = self.fwd_pid.SetPoint - self.MAX_HEIGHT_VARIANCE
-        else:
-            input = height
-        self.prev_fwd_feedback = input
-        
-        return input
-
-
-    def __get_yaw_vel_from_output(self, output):
-        clipped = np.clip(-output, -self.MAX_YAW_VEL, self.MAX_YAW_VEL)
-        return clipped
-
-
-    def __get_fwd_vel_from_output(self, output):
-        clipped = np.clip(output, -self.MAX_FWD_VEL, self.MAX_FWD_VEL)
-        return clipped
+        return p2[1] - p1[1]
 
 
 ##########################################################

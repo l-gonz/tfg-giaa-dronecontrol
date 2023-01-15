@@ -2,18 +2,14 @@ import time
 import typing
 import cv2
 import os
+from datetime import datetime
 import mediapipe.python.solutions.hands as mp_hands
 import mediapipe.python.solutions.drawing_utils as mp_drawing
 import mediapipe.python.solutions.hands_connections as mp_connections
 
 from dronecontrol.common import utils
 from dronecontrol.hands import gestures
-from dronecontrol.common.video_source import CameraSource, FileSource, VideoSource
-
-class Color():
-    """Define color constants to use with cv2."""
-    GREEN = (0, 255, 0)
-    PINK = (255, 0, 255)
+from dronecontrol.common.video_source import *
 
 
 class HandGui():
@@ -22,15 +18,13 @@ class HandGui():
     Class for using video captured from a webcam to detect
     the presence of a hand.
     """
-    FONT = cv2.FONT_HERSHEY_PLAIN
-    FONT_SCALE = 2
     WIDTH = 640
     HEIGHT = 480
     
 
-    def __init__(self, file=None, max_num_hands=1):
+    def __init__(self, file=None, max_num_hands=1, log_video=False, source=None):
 
-        self.log = utils.make_logger(__name__)
+        self.log = utils.make_stdout_logger(__name__)
         self.__gesture_event_handler = []
         self.__current_time = 0
         self.__past_time = 0
@@ -40,13 +34,28 @@ class HandGui():
         self.hand_landmarks = None
         self.hand_model = mp_hands.Hands(max_num_hands=max_num_hands)
 
-        self.__source = HandGui.__get_source(file)
-        self.img = VideoSource.get_blank()
+        self.__source = source if source else HandGui.__get_source(file)
+        self.img = self.__source.get_blank()
+
+        self.__video_writer = None
+        if log_video:
+            self.__video_writer = cv2.VideoWriter(f"img/video_{__name__}_{datetime.now():%d%m%y%H%M%S}.mp4", 
+                cv2.VideoWriter_fourcc('M','J','P','G'), 30, self.__source.get_size())
+
+
+    def close(self):
+        cv2.waitKey(1)
+        self.__source.close()
+
+        if self.__video_writer:
+            self.__video_writer.release()
 
 
     def capture(self):
         """Capture image from webcam and extract hand gesture."""
         self.img = self.__source.get_frame()
+        if self.__video_writer:
+            self.__video_writer.write(self.img)
 
         results = self.get_landmarks()
         self.hand_landmarks = results.multi_hand_landmarks
@@ -59,7 +68,7 @@ class HandGui():
             self.__invoke_gesture(gesture)
 
 
-    def render(self, show_fps=True, show_hands=True, delay=1) -> int:
+    def render(self, show_fps=True, show_hands=True) -> int:
         """Show captured image in a new window.
         
         Returns a keycode if a key was pressed during rendering
@@ -70,18 +79,9 @@ class HandGui():
         if show_hands:
             self.__draw_hands()
         if show_fps:
-            self.annotate(f"FPS: {self.fps}", 0)
-        cv2.imshow("Image", self.img)
-        return cv2.waitKey(delay)
-
-
-    def annotate(self, value, channel=1):
-        """Annotate the captured image with the given text.
-        
-        Several channels available for positioning the text."""
-        cv2.putText(self.img, str(value),
-            self.__get_text_pos(channel),
-            self.FONT, self.FONT_SCALE, Color.GREEN, self.FONT_SCALE)
+            utils.write_text_to_image(self.img, f"FPS: {self.fps}", 0)
+        cv2.imshow("Dronecontrol: hand gestures", self.img)
+        return cv2.waitKey(self.__source.get_delay())
 
 
     def subscribe_to_gesture(self, func: typing.Callable[[gestures.Gesture], None]):
@@ -107,6 +107,24 @@ class HandGui():
         return self.hand_model.process(rgb_img)
 
 
+    def draw_hands(self, img=None):
+        """Draw hand landmarks to captured image."""
+        if img is None: 
+            img = self.img
+        if not self.hand_landmarks:
+            return
+        for hand in self.hand_landmarks:
+            for mark in hand.landmark:
+                center = (int(mark.x * self.WIDTH), int(mark.y * self.HEIGHT))
+                self.log.debug(f"-> {center[0], center[1]}")
+                cv2.circle(img, center, 3, utils.Color.PINK, cv2.FILLED)
+            mp_drawing.draw_landmarks(img, hand, mp_connections.HAND_CONNECTIONS)
+
+
+    def get_current_gesture(self):
+        return self.__past_gesture
+
+
     @staticmethod
     def __get_source(file):
         if file:
@@ -125,18 +143,6 @@ class HandGui():
             func(gesture)
 
 
-    def __draw_hands(self):
-        """Draw hand landmarks to captured image."""
-        if not self.hand_landmarks:
-            return
-        for hand in self.hand_landmarks:
-            for mark in hand.landmark:
-                center = (int(mark.x * self.WIDTH), int(mark.y * self.HEIGHT))
-                self.log.debug(f"-> {center[0], center[1]}")
-                cv2.circle(self.img, center, 3, Color.PINK, cv2.FILLED)
-            mp_drawing.draw_landmarks(self.img, hand, mp_connections.HAND_CONNECTIONS)
-
-
     def __calculate_fps(self) -> int:
         """Calculate FPS from time difference with previous render."""
         self.__current_time = time.perf_counter()
@@ -145,11 +151,12 @@ class HandGui():
         return int(fps)
 
 
-    def __get_text_pos(self, channel) -> typing.Tuple[int,int]:
-        """Map channel number to pixel position."""
-        if channel == 0:
-            return (10, 30)
-        if channel == 1:
-            return (10, self.HEIGHT - 10)
-        if channel == 2:
-            return (10, self.HEIGHT - 50)
+
+if __name__ == "__main__":
+    gui = HandGui()
+    while True:
+        gui.capture()
+        if gui.render() > 0:
+            break
+    
+    gui.close()

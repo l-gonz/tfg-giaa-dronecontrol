@@ -1,20 +1,19 @@
+# Standard packages
 absl-py==1.0.0
 aiogrpc==1.8
 attrs==21.2.0
+click==8.1.3
 cycler==0.11.0
 fonttools==4.28.2
 grpcio==1.42.0
 iniconfig==1.1.1
 kiwisolver==1.3.2
 matplotlib==3.5.0
-mavsdk==0.21.0
-mediapipe==0.8.9
 numpy==1.21.4
-opencv-contrib-python==4.5.4.60
 packaging==21.3
 Pillow==8.4.0
 pluggy==1.0.0
-protobuf==3.19.1
+protobuf==3.20.1
 py==1.11.0
 pyparsing==3.0.6
 pytest==6.2.5
@@ -23,3 +22,9 @@ setuptools-scm==6.3.2
 six==1.16.0
 toml==0.10.2
 tomli==1.2.2
+
+# Project specific packages, to be kept updated
+airsim==1.7.0
+mavsdk==1.2.0
+mediapipe>=0.8.9.1
+opencv-contrib-python==4.5.4.60

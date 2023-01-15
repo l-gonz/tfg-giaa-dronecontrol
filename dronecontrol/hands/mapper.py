@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 
 from dronecontrol.common import utils
 from dronecontrol.hands import graphics
@@ -32,53 +33,79 @@ async def run_gui(gui):
     the image and render it.
     
     Return whether the loop should continue."""
+
     try:
         gui.capture()
-    except Exception:
-        log.error("Fatal error: cannot capture image")
+        key_action = utils.keyboard_control(gui.render())
+        if key_action:
+            system.queue_action(key_action, interrupt=True)  
+    except Exception as e:
+        log.error(e)
         return False
 
-    if gui.render() >= 0:
-        return False
-
-    await asyncio.sleep(0.03)
+    await asyncio.sleep(0.01)
     return True
 
 
-async def cancel_pending(task):
+async def log_loop():
+    try:
+        while True:
+            log.info("LOG loop")
+            await utils.log_system_info(file_log, system, gui.get_current_gesture())
+            await asyncio.sleep(0.1)
+    except (asyncio.CancelledError, KeyboardInterrupt):
+        log.warning("End of log loop")
+
+
+async def cancel_pending(*tasks):
     """Stop previous running tasks."""
-    if not task.done():
-        task.cancel()
-    await task
+    for task in tasks:
+        if not task.done():
+            task.cancel()
+        await task
     log.info("All tasks finished")
 
 
-async def run(port=None, serial=None, file=None):
+async def run():
     """Runs the GUI loop and the drone control thread simultaneously."""
-    global log
-    log = utils.make_logger(__name__)
-
-    system = System(port, serial)
-    gui = graphics.HandGui(file)
-    
-    task = asyncio.create_task(system.start())
+    pilot_task = asyncio.create_task(system.start())
     gui.subscribe_to_gesture(lambda g: map_gesture_to_action(system, g))
 
-    log.info("Starting graphics loop")
+    if file_log:
+        log_task = asyncio.create_task(log_loop())
+
     while True:
         if not await run_gui(gui):
             break
-        if task.done():
+        if pilot_task.done():
             break
 
     log.warning("System stop")
-    await cancel_pending(task)
+    await cancel_pending(pilot_task, log_task)
 
 
-def main(port=None, serial=None, file=None):
+def close_handlers():
+    gui.close()
+    system.close()
+    utils.close_file_logger(file_log)
+
+
+def main(port=None, serial=None, video_file=None, log_to_file=False):
+    global log, file_log, system, gui
+    log = utils.make_stdout_logger(__name__)
+    file_log = utils.make_file_logger(__name__) if log_to_file else None
+
+    system = System(port=port, use_serial=serial is not None, serial_address=serial)
+    gui = graphics.HandGui(video_file, log_video=log_to_file and not video_file)
+
     try:
-        asyncio.run(run(port, serial, file))
+        asyncio.run(run())
     except asyncio.CancelledError:
         log.warning("Cancel program run")
-
+    except KeyboardInterrupt:
+        log.warning("Cancelled with KeyboardInterrupt")
+    except:
+        traceback.print_exc()
+    finally:
+        close_handlers()
     

@@ -38,7 +38,7 @@ class Detector():
     EXTENDED_FINGER_THRESHOLD = 50
 
     def __init__(self, hands_landmarks):
-        self.log = utils.make_logger(__name__)
+        self.log = utils.make_stdout_logger(__name__)
         self.hands = hands_landmarks
         if self.hands != None:
             self.__process_hand()
@@ -96,11 +96,11 @@ class Detector():
         index_vector = index[Joint.TIP] - index[Joint.FIRST]
         angle = Detector.__angle(index_vector, VECTOR_UP)
 
-        if angle > 0 and angle < 80:
+        if angle > 0 and angle < 70:
             return Gesture.POINT_RIGHT
-        elif angle > 80 and angle < 100:
+        elif angle > 70 and angle < 110:
             return Gesture.POINT_UP
-        elif angle > 100 and angle < 180:
+        elif angle > 110 and angle < 180:
             return Gesture.POINT_LEFT
         else:
             self.log.error("Could not detect point gesture")

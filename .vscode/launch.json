@@ -5,12 +5,73 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Module",
+            "name": "File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Hand",
             "type": "python",
             "request": "launch",
             "module": "dronecontrol",
             "justMyCode": true,
-            "args": ["utils", "take-video"]
+            "args": [
+                "hand",
+                "-f",
+                "img/hand-short.mp4"
+            ]
+        },
+        {
+            "name": "Follow",
+            "type": "python",
+            "request": "launch",
+            "module": "dronecontrol",
+            "justMyCode": true,
+            "args": [
+                "follow",
+                "--sim",
+                "-p",
+                "14550"
+            ]
+        },
+        {
+            "name": "Video",
+            "type": "python",
+            "request": "launch",
+            "module": "dronecontrol",
+            "justMyCode": true,
+            "args": [
+                "tools",
+                "test-camera",
+                "-p",
+                "-w",
+                "-s"
+            ]
+        },
+        {
+            "name": "Control",
+            "type": "python",
+            "request": "launch",
+            "module": "dronecontrol",
+            "justMyCode": true,
+            "args": [
+                "tools",
+                "test-controller"
+            ]
+        },
+        {
+            "name": "Tune",
+            "type": "python",
+            "request": "launch",
+            "module": "dronecontrol",
+            "justMyCode": true,
+            "args": [
+                "tools",
+                "tune"
+            ]
         }
     ]
 }

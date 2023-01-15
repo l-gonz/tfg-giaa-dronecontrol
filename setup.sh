@@ -32,6 +32,11 @@ chmod u+x ./QGroundControl.AppImage
 cd $PX4
 DONT_RUN=1 make px4_sitl_default none_iris 
 
-# WSL
-# export PX4_SIM_HOST_ADDR=172.25.48.1
-# pip install -e .
+# WSL (happens automatically if using ./simulator.sh --airsim)
+# export PX4_SIM_HOST_ADDR=<windows host ip on WSL network>
+
+# Dronecontrol
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install -e .

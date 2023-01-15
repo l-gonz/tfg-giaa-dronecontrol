@@ -90,7 +90,7 @@ def write_text_to_image(image, text, channel=1):
         
     Several channels available for positioning the text."""
     cv2.putText(image, str(text), __get_text_pos(image, channel),
-        FONT, FONT_SCALE, Color.GREEN, FONT_SCALE)
+        FONT, FONT_SCALE, Color.BLUE, FONT_SCALE)
 
 
 def __get_text_pos(image, channel) -> typing.Tuple[int,int]:
@@ -100,7 +100,7 @@ def __get_text_pos(image, channel) -> typing.Tuple[int,int]:
     if channel == 1:
         return (10, image.shape[0] - 10)
     if channel == 2:
-        return (10, image.shape[0] - 50)
+        return (10, image.shape[0] - 30)
 
 
 def get_wsl_host_ip():
@@ -123,7 +123,7 @@ def keyboard_control(key: int):
     log = make_stdout_logger(__name__)
 
     log.info(f"Pressed [{chr(key)}]")
-    if key == ord('q'): # Quit
+    if key == ord('z'): # Quit
         raise KeyboardInterrupt
     elif key == ord('k'): # Kill switch
         return pilot.System.kill_engines
@@ -139,11 +139,15 @@ def keyboard_control(key: int):
         return pilot.System.toggle_offboard
     elif key == ord('w'): # Forward
         return pilot.System.move_fwd_positive
-    elif key == ord('a'): # Yaw left
+    elif key == ord('s'): # Backward
+        return pilot.System.move_fwd_negative
+    elif key == ord('d'): # Right
+        return pilot.System.move_right
+    elif key == ord('a'): # Left
+        return pilot.System.move_left
+    elif key == ord('q'): # Yaw left
         return pilot.System.move_yaw_left
-    elif key == ord('s'): # Forward
-        return pilot.System.move_fwd_positive
-    elif key == ord('d'): # Yaw right
+    elif key == ord('e'): # Yaw right
         return pilot.System.move_yaw_right
     elif key == ord(' '): # Take picture / start video
         return tools.VideoCamera.trigger

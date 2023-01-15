@@ -20,9 +20,9 @@ class State(Enum):
 
 class ControlTest:
 
-    START_POS = PositionNedYaw(0, 0, -2.4, 0)
+    START_POS = PositionNedYaw(0, 0, -2.4, 2)
 
-    def __init__(self, is_rotation=True, data_file=None):
+    def __init__(self, test_yaw=True, data_file=None):
         self.log = utils.make_stdout_logger(__name__)
 
         # MAVsdk with SITL only works on port 14550, airsim port can be whatever
@@ -32,9 +32,10 @@ class ControlTest:
         self.data = {}
         self.target_index = 0
         self.current_state = State.RESET
+        self.log.info(f"Set state to {self.current_state}")
         self.finished = False
-        self.is_rotation = is_rotation
-        self.targets = ROTATION_TARGETS if is_rotation else DISTANCE_TARGETS
+        self.test_yaw = test_yaw
+        self.targets = ROTATION_TARGETS if test_yaw else DISTANCE_TARGETS
         self.follow.is_follow_on = False
 
         if data_file:
@@ -45,7 +46,7 @@ class ControlTest:
 
 
     async def run(self):
-        await self.follow.connect()
+        await self.follow.pilot.connect()
         await asyncio.sleep(5)
         await self.follow.pilot.takeoff()
         await asyncio.sleep(2)
@@ -56,23 +57,21 @@ class ControlTest:
             await self.follow.run()
         except Exception as e:
             self.log.error(e)
-            self.plot_data()
         finally:
+            # Save data in case of plotting errors
             if self.data.keys():
-                with open(f"data/sample{datetime.now().strftime('%Y%m%d%H%M%S')}.json", "w") as outfile:
+                with open(f"data/test-pid-{datetime.now().strftime('%Y%m%d%H%M%S')}.json", "w") as outfile:
                     json.dump(self.data, outfile)
+
 
     async def on_new_image(self, p1, p2):
         if self.finished:
             return
-        print(f"New image, current state:  {self.current_state}")
         
         if self.current_state == State.RESET:
             if self.has_person_reached_center(p1, p2, 0.01, 0.1):
                 self.log.info("REACHED CENTER")
                 await self.init_test()
-            else:
-                self.log.info(f"Current error - yaw: {self.follow.controller.get_yaw_error(p1, p2)}, fwd: {self.follow.controller.get_fwd_error(p1, p2)}")
 
         if self.current_state == State.INIT:
             if self.has_person_left_center(p1, p2):
@@ -89,10 +88,12 @@ class ControlTest:
         self.follow.is_follow_on = True
         
         self.current_state = State.INIT
+        self.log.info(f"Set state to {self.current_state}")
         self.log.info(f"Move person to target horizontal ({self.targets[self.target_index]})")
 
 
     async def start_control(self):
+        self.log.info(f"Set state to {self.current_state}")
         self.log.info(f"Start control algorithm")
         self.current_state = State.CONTROL
         self.follow.controller.reset()
@@ -104,13 +105,14 @@ class ControlTest:
         self.log.info(f"Center achieved, took {time.time() - self.start_time} seconds")
         self.follow.is_follow_on = False
         self.current_state = State.DATA_RECOVERY
+        self.log.info(f"Set state to {self.current_state}")
 
     
     async def save_data(self):
         self.data[self.targets[self.target_index]] = {
             "yaw": self.follow.controller.get_yaw_data(),
             "fwd": self.follow.controller.get_fwd_data(),
-            "time": self.follow.controller.get_time_data()
+            "time": self.follow.controller.get_time_data(True)
         }
         self.log.info(f"Set position velocity to origin")
         await self.follow.pilot.set_position_ned_yaw(self.START_POS)
@@ -119,9 +121,11 @@ class ControlTest:
         self.target_index += 1
         if self.target_index == len(self.targets):
             self.finished = True
+            self.plot_data()
             raise KeyboardInterrupt
         else:
             self.current_state = State.RESET
+            self.log.info(f"Set state to {self.current_state}")
             self.log.info(f"Wait for person in center")
 
     
@@ -129,8 +133,8 @@ class ControlTest:
         time = [self.data[target]["time"] for target in self.data]
         yaw_input = [self.data[target]["yaw"][1] for target in self.data]
         fwd_input = [self.data[target]["fwd"][1] for target in self.data]
-        utils.plot(time, yaw_input, block=False, title="Yaw input", ylabel="Horizontal distance")
-        utils.plot(time, fwd_input, title="Fwd input", ylabel="Area")
+        utils.plot(time, yaw_input, block=False, title="Yaw input", ylabel="Horizontal distance", legend=self.targets)
+        utils.plot(time, fwd_input, title="Fwd input", ylabel="Height", legend=self.targets)
 
 
     def close(self):
@@ -148,8 +152,8 @@ class ControlTest:
 
     def has_person_left_center(self, p1, p2, yaw_error=0.03, fwd_error=0.3):
         return (self.has_pose()
-            and (not self.is_rotation or abs(self.follow.controller.get_yaw_error(p1, p2)) > yaw_error)
-            and (self.is_rotation or abs(self.follow.controller.get_fwd_error(p1, p2)) > fwd_error))
+            and (not self.test_yaw or abs(self.follow.controller.get_yaw_error(p1, p2)) > yaw_error)
+            and (self.test_yaw or abs(self.follow.controller.get_fwd_error(p1, p2)) > fwd_error))
 
     def is_low_speed(self):
         return (abs(self.follow.controller.last_yaw_vel) < 0.5

@@ -107,10 +107,15 @@ class Follow():
             pose.process(self.source.get_blank())
 
         p1, p2 = await utils.measure(image_processing.detect, self.measures['sub_image_3'], False, self.results, image)
-        utils.write_text_to_image(image, f"FPS: {round(1.0 / (time.time() - self.last_run_time))}", 0)
+
+        inputs = Controller.get_input(p1, p2)
+        utils.write_text_to_image(image, f"Yaw input: {inputs[0]:.3} - fwd input: {inputs[1]:.3}")
+        utils.write_text_to_image(image, f"Yaw output: {self.controller.last_yaw_vel:.3} - fwd output: {self.controller.last_fwd_vel:.3}", 2)
+        utils.write_text_to_image(image, f"FPS: {1.0 / (time.time() - self.last_run_time):.3}", 0)
         self.last_run_time = time.time()
+
         try:
-            cv2.imshow("Camera", image)
+            cv2.imshow("Dronecontrol: follow", image)
         except cv2.error as e:
             self.log.error("Error rendering image:\n" + str(e))
 
@@ -127,7 +132,6 @@ class Follow():
     async def __offboard_control(self, p1, p2):
         if await self.pilot.is_offboard(True) and self.is_follow_on:
             yaw, fwd = self.controller.control(p1, p2)
-            self.log.info(f"Yaw: ({yaw}), Fwd: ({fwd})")
             await self.__fly(yaw, fwd)
 
 

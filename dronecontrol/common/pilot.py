@@ -264,6 +264,14 @@ class System():
         pos = await self.get_position_ned_yaw()
         self.log.info(f"Current pos {pos}")
         await self.set_position_ned_yaw(PositionNedYaw(pos.north_m - 0.5, pos.east_m, pos.down_m, pos.yaw_deg))
+    async def move_right(self):
+        pos = await self.get_position_ned_yaw()
+        self.log.info(f"Current pos {pos}")
+        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m, pos.east_m + 0.5, pos.down_m, pos.yaw_deg))
+    async def move_left(self):
+        pos = await self.get_position_ned_yaw()
+        self.log.info(f"Current pos {pos}")
+        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m, pos.east_m - 0.5, pos.down_m, pos.yaw_deg))
 
 
     async def get_position(self):

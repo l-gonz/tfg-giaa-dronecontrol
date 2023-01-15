@@ -13,10 +13,10 @@ from dronecontrol.common.pilot import System
 
 class TunePIDController:
 
-    START_POS = PositionNedYaw(0, 0, -2.5, 3)
-    MEASURE_TIME = 20
+    START_POS = PositionNedYaw(0, 0, -2.5, 7) # Start position at (0,0,0) in AirSim
+    NEXT_VALUE_DELAY = 12
 
-    def __init__(self, tune_yaw=True, manual=False, kp_values=[], ki_values=[], kd_values=[]):
+    def __init__(self, tune_yaw=True, manual=False, sample_time=20, kp_values=[], ki_values=[], kd_values=[]):
         self.log = utils.make_stdout_logger(__name__)
         self.follow = Follow(port=14550, simulator="") 
 
@@ -25,6 +25,7 @@ class TunePIDController:
         self.follow.pilot.offboard_poll_time = -1
         self.first_time = True
 
+        self.sample_time = sample_time
         self.manual = manual or (kp_values == [0] and ki_values == [0] and kd_values == [0])
             
         self.save_parameter_values([kp_values, ki_values, kd_values])
@@ -60,9 +61,9 @@ class TunePIDController:
 
     async def on_new_image(self, p1, p2):
         if not self.manual:
-            # Wait until measures have been taken for MEASURE_TIME seconds and save the data
+            # Wait until measures have been taken for sample_time seconds and save the data
             time_data = self.follow.controller.get_time_data(True)
-            if time_data and time_data[-1] > self.MEASURE_TIME:
+            if time_data and self.follow.is_follow_on and time_data[-1] > self.sample_time:
                 await self.go_to_next_value(time_data)
 
         # Manual keyboard control
@@ -84,8 +85,6 @@ class TunePIDController:
         # Reset position
         self.follow.is_follow_on = False
         await self.follow.pilot.set_position_ned_yaw(self.START_POS)
-        await asyncio.sleep(10)
-        self.follow.controller.reset()
 
         # Set next value on the controller, repeat first one for more consistent results
         if self.first_time:
@@ -93,8 +92,8 @@ class TunePIDController:
         else:
             self.set_next_value()
 
-        # Engage controller again
-        self.follow.is_follow_on = True
+        # Engage controller again in 10 seconds
+        asyncio.create_task(self.restart_control(self.NEXT_VALUE_DELAY))
 
 
     async def verify_tuning(self):
@@ -142,8 +141,20 @@ class TunePIDController:
                 key_action(self.follow.pose, self.follow.source.get_blank())
         else:
             time_data = self.follow.controller.get_time_data()
-            if time_data and int(time_data[-1] - time_data[0]) % 5 == 0:
+            if (self.follow.is_follow_on and len(time_data) > 2 
+                and int(time_data[-1] - time_data[0]) % 5 == 0
+                and int(time_data[-2] - time_data[0]) % 5 != 0):
                 self.log.warning(f"Elapsed {time_data[-1] - time_data[0]} seconds")
+
+
+    async def restart_control(self, delay):
+        await asyncio.sleep(delay)
+        if not self.tune_yaw:
+            await self.follow.pilot.set_velocity()
+            await asyncio.sleep(delay * 2)
+
+        self.follow.controller.reset()
+        self.follow.is_follow_on = True
 
 
     def save_parameter_values(self, values):
@@ -175,7 +186,7 @@ class TunePIDController:
             )
             self.log.info(f"Values left {len(self.target_values)}/{len(self.legend)}")
         else:
-            utils.plot(self.time + [[0, self.MEASURE_TIME]], self.feedback_data + [[pid.setpoint, pid.setpoint]], 
+            utils.plot(self.time + [[0, self.sample_time]], self.feedback_data + [[pid.setpoint, pid.setpoint]], 
                        legend=self.legend + ["Target"], block=False,
                        title="Yaw controller" if self.tune_yaw else "Forward controller", 
                        ylabel="Horizontal position" if self.tune_yaw else "Height")

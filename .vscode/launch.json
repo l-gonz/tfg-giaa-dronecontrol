@@ -46,7 +46,9 @@
             "args": [
                 "tools",
                 "test-camera",
-                "-rs"
+                "-p",
+                "-w",
+                "-s"
             ]
         },
         {

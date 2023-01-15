@@ -13,8 +13,8 @@ class Controller:
     ZEROES = np.asarray([0, 0])
     ONES = np.asarray([1, 1])
 
-    DEFAULT_YAW_TUNINGS = (-50, 0, 0)
-    DEFAULT_FWD_TUNINGS = (2, 0, 0)
+    DEFAULT_YAW_TUNINGS = (-50, -0.5, 0)
+    DEFAULT_FWD_TUNINGS = (4, 0.1, 0)
 
     def __init__(self, target_x, target_height) -> None:
         self.log = utils.make_stdout_logger(__name__)
@@ -59,8 +59,8 @@ class Controller:
         # if abs(1 - fwd_input / self.fwd_pid.SetPoint) < self.ALLOWED_ERROR:
         #     fwd_vel = 0
 
-        self.last_yaw_vel = yaw_vel
-        self.last_fwd_vel = fwd_vel
+        self.last_yaw_vel = (float)(yaw_vel)
+        self.last_fwd_vel = (float)(fwd_vel)
         return yaw_vel, fwd_vel
 
 
@@ -76,8 +76,8 @@ class Controller:
         self._time_list = []
         self._start_time = time.time()
 
-        self.last_yaw_vel = 0
-        self.last_fwd_vel = 0
+        self.last_yaw_vel = 0.0
+        self.last_fwd_vel = 0.0
         self.yaw_pid.reset()
         self.fwd_pid.reset()
 
@@ -112,14 +112,19 @@ class Controller:
             return [t - self._time_list[0] for t in self._time_list]
         return self._time_list
 
-    
-    def __get_yaw_point_from_box(self, p1, p2):
-        mid_point = p1 + (p2 - p1) / 2
+    @staticmethod
+    def __get_yaw_point_from_box(p1, p2):
+        mid_point = p1 + (p2 - p1) / 2.0
         return mid_point[0]
         
+    @staticmethod
+    def __get_fwd_point_from_box(p1, p2):
+        return (float)(p2[1] - p1[1])
 
-    def __get_fwd_point_from_box(self, p1, p2):
-        return p2[1] - p1[1]
+    
+    @staticmethod
+    def get_input(p1, p2):
+        return (Controller.__get_yaw_point_from_box(p1, p2), Controller.__get_fwd_point_from_box(p1, p2))
 
 
 ##########################################################

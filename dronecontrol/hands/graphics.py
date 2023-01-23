@@ -33,6 +33,7 @@ class HandGui():
         self.fps = 0
         self.hand_landmarks = None
         self.hand_model = mp_hands.Hands(max_num_hands=max_num_hands)
+        self.detector = gestures.Detector()
 
         self.__source = source if source else HandGui.__get_source(file)
         self.img = self.__source.get_blank()
@@ -61,8 +62,7 @@ class HandGui():
         self.hand_landmarks = results.multi_hand_landmarks
         self.hand_landmarks_world = results.multi_hand_world_landmarks
 
-        detector = gestures.Detector(self.hand_landmarks)
-        gesture = detector.get_gesture()
+        gesture = self.detector.get_gesture(self.hand_landmarks, results.multi_handedness)
         if gesture is not None and gesture != self.__past_gesture:
             self.__past_gesture = gesture
             self.__invoke_gesture(gesture)
@@ -77,7 +77,7 @@ class HandGui():
         self.fps = self.__calculate_fps()
 
         if show_hands:
-            self.__draw_hands()
+            self.draw_hands()
         if show_fps:
             utils.write_text_to_image(self.img, f"FPS: {self.fps}", 0)
         cv2.imshow("Dronecontrol: hand gestures", self.img)

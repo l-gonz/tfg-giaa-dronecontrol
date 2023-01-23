@@ -12,12 +12,13 @@ def main():
     pass
 
 @main.command()
+@click.option("-i", "--ip", help="pilot IP address, ignored if serial is provided")
 @click.option("-p", "--port", type=int, help="port for UDP connections")
 @click.option("-s", "--serial", is_flag=False, flag_value="", help="connect to drone system through serial, default device is /dev/ttyUSB0")
 @click.option("-f", "--file", type=click.Path(exists=True, readable=True), help="file to use as source instead of the camera")
 @click.option("-l", "--log", is_flag=True, help="log important info and save video")
-def hand(port, serial, file, log):
-    hands_entry.main(port, serial, file, log)
+def hand(ip, port, serial, file, log):
+    hands_entry.main(ip, port, serial, file, log)
 
 @main.command()
 @click.option("--ip", default="", help="pilot IP address, ignored if serial is provided")

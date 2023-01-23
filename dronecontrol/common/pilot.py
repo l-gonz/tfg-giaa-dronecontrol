@@ -141,7 +141,7 @@ class System():
         await self.mav.action.kill()
 
 
-    async def abort(self):
+    async def hold(self):
         try:
             await self.mav.action.hold()
         except Exception as e:

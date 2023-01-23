@@ -136,7 +136,7 @@ class TunePIDController:
                     await key_action(self.follow.pilot)
                 except ActionError as e:
                     self.log.error(e)
-                    await self.follow.pilot.abort()     
+                    await self.follow.pilot.hold()     
             elif SolutionBase.__name__ in key_action.__qualname__:
                 key_action(self.follow.pose, self.follow.source.get_blank())
         else:

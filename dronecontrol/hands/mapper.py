@@ -11,7 +11,7 @@ def map_gesture_to_action(system, gesture):
     """Map a hand gesture to a drone action."""
     
     if gesture == Gesture.NO_HAND:
-        return system.queue_action(System.return_home, interrupt=True)
+        return system.queue_action(System.hold, interrupt=True)
     if gesture == Gesture.STOP:
         return system.queue_action(System.land)
     if gesture == Gesture.FIST:
@@ -41,6 +41,7 @@ async def run_gui(gui):
             system.queue_action(key_action, interrupt=True)  
     except Exception as e:
         log.error(e)
+        traceback.print_exc()
         return False
 
     await asyncio.sleep(0.01)
@@ -90,12 +91,12 @@ def close_handlers():
     utils.close_file_logger(file_log)
 
 
-def main(port=None, serial=None, video_file=None, log_to_file=False):
+def main(ip=None, port=None, serial=None, video_file=None, log_to_file=False):
     global log, file_log, system, gui
     log = utils.make_stdout_logger(__name__)
     file_log = utils.make_file_logger(__name__) if log_to_file else None
 
-    system = System(port=port, use_serial=serial is not None, serial_address=serial)
+    system = System(ip=ip, port=port, use_serial=serial is not None, serial_address=serial)
     gui = graphics.HandGui(video_file, log_video=log_to_file and not video_file)
 
     try:

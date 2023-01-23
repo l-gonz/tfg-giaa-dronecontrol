@@ -31,30 +31,35 @@ class FINGER():
 
 
 VECTOR_UP = np.array([1, 0, 0])
+THUMB_THRESHOLDS = {
+    "Right": (85, 120),
+    "Left": (65, 100)
+}
 
 
 class Detector():
     """Detect hand gestures from joint landmarks."""
     EXTENDED_FINGER_THRESHOLD = 50
 
-    def __init__(self, hands_landmarks):
+    def __init__(self):
         self.log = utils.make_stdout_logger(__name__)
+
+
+    def get_gesture(self, hands_landmarks, hand_label) -> Gesture:
+        """Identify the gesture given by the hand landmarks."""
         self.hands = hands_landmarks
-        if self.hands != None:
+        if self.hands is None:
+            return Gesture.NO_HAND
+        else:
             self.__process_hand()
 
-
-    def get_gesture(self) -> Gesture:
-        """Identify the gesture given by the hand landmarks."""
-        if self.hands == None:
-            return Gesture.NO_HAND
-
-        finger_state = self.__get_finger_state()
-        if sum(finger_state) == 0:
+        self.label = hand_label[0].classification[0].label
+        is_finger_up = self.__get_finger_up_state()
+        if not any(is_finger_up[FINGER.INDEX:]):
             return Gesture.FIST
-        if not any(finger_state[FINGER.MIDDLE:]):
+        if is_finger_up[FINGER.INDEX] and not any(is_finger_up[FINGER.MIDDLE:]):
             return self.__get_thumb_index_combination()
-        if sum(finger_state) == 5:
+        if sum(is_finger_up) == 5:
             return Gesture.STOP
 
 
@@ -65,7 +70,7 @@ class Detector():
         self.fingers = np.array(data[1:]).reshape(5, 4, 3)
 
 
-    def __get_finger_state(self):
+    def __get_finger_up_state(self):
         """Return a list with the status of each finger
         of whether it is extended or not.
         
@@ -111,9 +116,9 @@ class Detector():
         thumb_vector = thumb[Joint.TIP] - thumb[Joint.FIRST]
         angle = Detector.__angle(thumb_vector, VECTOR_UP)
         
-        if angle > 0 and angle < 80:
+        if angle > 0 and angle < THUMB_THRESHOLDS[self.label][0]:
             return Gesture.THUMB_RIGHT
-        elif angle > 100 and angle < 180:
+        elif angle > THUMB_THRESHOLDS[self.label][1] and angle < 180:
             return Gesture.THUMB_LEFT
 
 

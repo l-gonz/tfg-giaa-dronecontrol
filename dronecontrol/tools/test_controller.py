@@ -9,7 +9,7 @@ from dronecontrol.common import utils
 from dronecontrol.follow.follow import Follow
 
 ROTATION_TARGETS = [-150, -100, -50, 50, 100, 150]
-DISTANCE_TARGETS = [200, 400, 800, 1000]
+DISTANCE_TARGETS = [300, 400, 500, 700, 800, 900]
 
 class State(Enum):
     RESET = 0 # Position is resetting
@@ -69,7 +69,7 @@ class ControlTest:
             return
         
         if self.current_state == State.RESET:
-            if self.has_person_reached_center(p1, p2, 0.01, 0.1):
+            if self.has_person_reached_center(p1, p2, 0.01, 0.01):
                 self.log.info("REACHED CENTER")
                 await self.init_test()
 
@@ -77,7 +77,7 @@ class ControlTest:
             if self.has_person_left_center(p1, p2):
                 await self.start_control()
         if self.current_state == State.CONTROL:
-            if self.has_person_reached_center(p1, p2, 0.02, 0.2, check_vel=True):
+            if self.has_person_reached_center(p1, p2, 0.02, 0.02, check_vel=True):
                 await self.stop_control()
         if self.current_state == State.DATA_RECOVERY:
             await self.save_data()
@@ -150,11 +150,11 @@ class ControlTest:
             and abs(self.follow.controller.get_fwd_error(p1, p2)) < fwd_error
             and (not check_vel or self.is_low_speed()))
 
-    def has_person_left_center(self, p1, p2, yaw_error=0.03, fwd_error=0.3):
+    def has_person_left_center(self, p1, p2, yaw_error=0.03, fwd_error=0.05):
         return (self.has_pose()
             and (not self.test_yaw or abs(self.follow.controller.get_yaw_error(p1, p2)) > yaw_error)
             and (self.test_yaw or abs(self.follow.controller.get_fwd_error(p1, p2)) > fwd_error))
 
     def is_low_speed(self):
         return (abs(self.follow.controller.last_yaw_vel) < 0.5
-            and abs(self.follow.controller.last_fwd_vel) < 0.1)
+            and abs(self.follow.controller.last_fwd_vel) < 0.04)

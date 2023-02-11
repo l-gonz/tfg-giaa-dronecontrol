@@ -28,7 +28,7 @@ def map_gesture_to_action(system, gesture):
         return system.queue_action(System.set_velocity, params={"forward": -1.0})
     
 
-async def run_gui(gui):
+async def run_gui(gui: graphics.HandGui):
     """Run loop for the interface to capture
     the image and render it.
     
@@ -36,7 +36,8 @@ async def run_gui(gui):
 
     try:
         gui.capture()
-        key_action = utils.keyboard_control(gui.render())
+        key = gui.render()
+        key_action = utils.keyboard_control(key)
         if key_action:
             system.queue_action(key_action, interrupt=True)  
     except Exception as e:

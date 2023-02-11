@@ -8,4 +8,5 @@
     "python.testing.pytestArgs": [
         "--ignore=Firmware"
     ],
+    "git.autoRepositoryDetection": "openEditors"
 }

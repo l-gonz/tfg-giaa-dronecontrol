@@ -80,7 +80,7 @@ class HandGui():
             self.draw_hands()
         if show_fps:
             utils.write_text_to_image(self.img, f"FPS: {self.fps}", 0)
-        cv2.imshow("Dronecontrol: hand gestures", self.img)
+        cv2.imshow("Dronecontrol: hand-gesture control", self.img)
         return cv2.waitKey(self.__source.get_delay())
 
 
@@ -109,7 +109,7 @@ class HandGui():
 
     def draw_hands(self, img=None):
         """Draw hand landmarks to captured image."""
-        if img is None: 
+        if img is None:
             img = self.img
         if not self.hand_landmarks:
             return

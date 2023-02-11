@@ -14,7 +14,7 @@ class Controller:
     ONES = np.asarray([1, 1])
 
     DEFAULT_YAW_TUNINGS = (-50, -0.5, 0)
-    DEFAULT_FWD_TUNINGS = (4, 0.1, 0)
+    DEFAULT_FWD_TUNINGS = (3, 0, 0)
 
     def __init__(self, target_x, target_height) -> None:
         self.log = utils.make_stdout_logger(__name__)

@@ -24,11 +24,10 @@ def hand(ip, port, serial, file, log):
 @click.option("--ip", default="", help="pilot IP address, ignored if serial is provided")
 @click.option("-p", "--port", default=None, help="pilot UDP port, ignored if serial is provided, default is 14540")
 @click.option("--sim", "simulator", is_flag=False, flag_value="", help="run with AirSim as flight engine, optionally provide ip the sim listens to")
-@click.option("-rs", "--real-sense", "use_realsense", is_flag=True, default=False, show_default=True, help="run with RealSense camera as video source")
 @click.option("-l", "--log", is_flag=True, help="log important info and save video")
 @click.option("-s", "--serial", is_flag=False, flag_value="", help="use serial to connect to PX4 (HITL), optionally provide the address of the serial port")
-def follow(ip, port, simulator, use_realsense, log, serial):
-    follow_entry.main(ip, simulator, use_realsense, serial, log, port)
+def follow(ip, port, simulator, log, serial):
+    follow_entry.main(ip, simulator, serial, log, port)
 
 @main.group()
 def tools():

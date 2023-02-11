@@ -9,7 +9,7 @@ from mediapipe.python.solution_base import SolutionBase
 from mavsdk.action import ActionError
 
 from dronecontrol.common import utils
-from dronecontrol.common.video_source import CameraSource, SimulatorSource, RealSenseCameraSource
+from dronecontrol.common.video_source import CameraSource, SimulatorSource
 from dronecontrol.common.pilot import System
 from dronecontrol.follow import image_processing
 from dronecontrol.follow.controller import Controller
@@ -17,24 +17,25 @@ from dronecontrol.follow.controller import Controller
 mp_pose = mp.solutions.pose
 
 YAW_POINT = 0.5 # Target mid-point of horizontal axis
-FWD_POINT = 0.36 # Target detected person height to 36% of screen height
-# Use 0.5 for real flight
+FWD_POINT_SIM = 0.36 # Target detected person height to 36% of screen height, appropriate for SIMULATOR TESTS
+FWD_POINT_CAM = 0.5 # 50% of screen height for real flight camera
 
 
 class Follow():
-    def __init__(self, ip="", port=None, serial=None, simulator=None, use_realsense=False, log=None, log_to_file=False):
+    def __init__(self, ip="", port=None, serial=None, simulator_ip=None, log=None, log_to_file=False):
         self.log = utils.make_stdout_logger(__name__) if log is None else log
         self.file_log = utils.make_file_logger(__name__) if log_to_file else None
         self.last_run_time = time.time()
         self.image_events = []
+        use_simulator = simulator_ip is not None
 
         # Connect with sim when no sim IP provided
-        if simulator is not None and not simulator and not serial:
+        if use_simulator and not simulator_ip and not serial:
             simulator = utils.get_wsl_host_ip()
-        self.source = self.__get_source(simulator, simulator is not None, use_realsense)
+        self.source = self.__get_source(simulator_ip, use_simulator)
 
         self.pilot = System(ip, port, serial is not None, serial, -1)
-        self.controller = Controller(YAW_POINT, FWD_POINT)
+        self.controller = Controller(YAW_POINT, FWD_POINT_SIM if use_simulator else FWD_POINT_CAM)
         self.is_follow_on = True
         self.is_keyboard_control_on = True
         self.measures = {
@@ -149,10 +150,8 @@ class Follow():
                 key_action(pose, self.source.get_blank())
 
 
-    def __get_source(self, ip, use_simulator, use_realsense):
-        if use_realsense:
-            return RealSenseCameraSource()
-        elif use_simulator:
+    def __get_source(self, ip, use_simulator):
+        if use_simulator:
             return SimulatorSource(ip)
         else:
             return CameraSource()
@@ -166,9 +165,9 @@ class Follow():
                 self.log.error(e)
 
 
-def main(ip="", simulator=None, use_realsense=False, serial=None, log_to_file=False, port=None):
+def main(ip="", simulator=None, serial=None, log_to_file=False, port=None):
     log = utils.make_stdout_logger(__name__)
-    follow = Follow(ip, port, serial, simulator, use_realsense, log, log_to_file)
+    follow = Follow(ip, port, serial, simulator, log, log_to_file)
 
     try:
         asyncio.run(follow.run())

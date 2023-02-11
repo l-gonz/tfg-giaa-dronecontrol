@@ -58,6 +58,7 @@ class Follow():
                 self.log.error("Connection time-out")
                 return
 
+        # model_complexity=0
         with mp_pose.Pose() as pose:
             self.pose = pose
             while True:
@@ -105,7 +106,10 @@ class Follow():
         except Exception as e:
             self.log.error("Image error: " + str(e))
             self.results.pose_landmarks = None
-            pose.process(self.source.get_blank())
+            try:
+                pose.process(self.source.get_blank())
+            except:
+                pose = mp_pose.Pose()
 
         p1, p2 = await utils.measure(image_processing.detect, self.measures['sub_image_3'], False, self.results, image)
 

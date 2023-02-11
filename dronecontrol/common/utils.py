@@ -225,4 +225,4 @@ def write_video(size):
 
 
 def get_formatted_date():
-    return datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    return datetime.now().strftime('%Y%m%d-%H%M%S')

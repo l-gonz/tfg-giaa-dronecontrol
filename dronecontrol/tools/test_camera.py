@@ -26,8 +26,6 @@ class ImageDetection(Enum):
     POSE = 2
 
 class VideoCamera:
-    IMAGE_FOLDER = 'img'
-    VIDEO_CODE = cv2.VideoWriter_fourcc('M','J','P','G')
 
     def __init__(self, use_simulator, use_hardware, use_wsl, use_camera, 
                  image_detection, hardware_address=None, simulator_ip=None,
@@ -124,13 +122,13 @@ class VideoCamera:
     
     def trigger(self):
         if self.mode == CameraMode.PICTURE:
-            self.__write_image()
+            utils.write_image(self.img)
         elif self.mode == CameraMode.VIDEO:
             if self.is_recording:
                 self.out.release()
                 self.out = None
             else:
-                self.out = self.__write_video()
+                self.out = utils.write_video(self.source.get_size())
             self.is_recording = not self.is_recording
 
 
@@ -143,23 +141,4 @@ class VideoCamera:
         elif VideoCamera.__name__ in key_action.__qualname__:
             key_action(self)
 
-
-    def __write_image(self, filepath: str=None):
-        """Save current captured image to file."""
-        if not filepath:
-            if not os.path.exists(VideoCamera.IMAGE_FOLDER):
-                os.makedirs(VideoCamera.IMAGE_FOLDER)
-            filepath = f"{VideoCamera.IMAGE_FOLDER}/{VideoCamera.__get_formatted_date()}.jpg"
-        cv2.imwrite(filepath, self.img)
-
-
-    def __write_video(self):
-        if not os.path.exists(VideoCamera.IMAGE_FOLDER):
-            os.makedirs(VideoCamera.IMAGE_FOLDER)
-        filepath = f"{VideoCamera.IMAGE_FOLDER}/{VideoCamera.__get_formatted_date()}.avi"
-        return cv2.VideoWriter(filepath, VideoCamera.VIDEO_CODE, 30, self.source.get_size())
     
-
-    @staticmethod
-    def __get_formatted_date():
-        return datetime.datetime.now().strftime('%Y%m%d-%H%M%S')

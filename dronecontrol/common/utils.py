@@ -14,6 +14,8 @@ from dronecontrol.common import pilot
 
 LOGGING_FORMAT = '%(levelname)s:%(name)s: %(message)s'
 SYSTEM_INFO_FORMATTER = '%(asctime)s,%(message)s'
+IMAGE_FOLDER = 'img'
+VIDEO_CODE = cv2.VideoWriter_fourcc('M','J','P','G')
 
 
 FONT = cv2.FONT_HERSHEY_PLAIN
@@ -204,3 +206,23 @@ async def measure(func, time_list, async_call, *args):
     end_time = time.perf_counter()
     time_list.append(end_time - start_time)
     return result
+
+
+def write_image(img, filepath: str=None):
+    """Save current captured image to file."""
+    if not filepath:
+        if not os.path.exists(IMAGE_FOLDER):
+            os.makedirs(IMAGE_FOLDER)
+        filepath = f"{IMAGE_FOLDER}/{get_formatted_date()}.jpg"
+    cv2.imwrite(filepath, img)
+
+
+def write_video(size):
+    if not os.path.exists(IMAGE_FOLDER):
+        os.makedirs(IMAGE_FOLDER)
+    filepath = f"{IMAGE_FOLDER}/{get_formatted_date()}.avi"
+    return cv2.VideoWriter(filepath, VIDEO_CODE, 30, size)
+
+
+def get_formatted_date():
+    return datetime.datetime.now().strftime('%Y%m%d-%H%M%S')

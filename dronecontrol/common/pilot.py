@@ -11,7 +11,7 @@ from dronecontrol.common import utils
 
 class Action(typing.NamedTuple):
     func: typing.Callable
-    args: dict
+    kwargs: dict
 
 
 class System():
@@ -38,6 +38,7 @@ class System():
         """
         self.is_ready = False
         self.actions = [] # type: typing.List[Action]
+        self.current_action_name = ""
         self.port = port or self.DEFAULT_UDP_PORT
         self.ip = ip
         self.serial = (serial_address if serial_address else self.DEFAULT_SERIAL_ADDRESS) if use_serial else None
@@ -75,18 +76,20 @@ class System():
             while True:
                 if len(self.actions) > 0:
                     action = self.actions.pop(0)
-                    self.log.info("Execute action: %s", action.func.__name__)
+                    self.current_action_name = action.func.__name__
+                    self.log.info("Execute action: %s", self.current_action_name)
                     try:
-                        await asyncio.wait_for(action.func(self, **action.args), timeout=10)
+                        await asyncio.wait_for(action.func(self, **action.kwargs), timeout=10)
                     except asyncio.exceptions.TimeoutError:
-                        self.log.warning(f"Time out waiting for {action.func.__name__}")
+                        self.log.warning(f"Time out waiting for {self.current_action_name}")
+                    self.current_action_name = ""
                 else:
                     await asyncio.sleep(self.WAIT_TIME)
         except asyncio.exceptions.CancelledError:
             self.log.warning("System stop")
 
 
-    def queue_action(self, func: typing.Callable, params: dict = {}, interrupt: bool = False):
+    def queue_action(self, func: typing.Callable, interrupt: bool = False, **kwargs: dict):
         """
         Add action to queue.
         
@@ -96,7 +99,7 @@ class System():
             self.clear_queue()
         if func is None:
             return
-        action = Action(func, params)
+        action = Action(func, kwargs)
         self.actions.append(action)
         self.log.info("Queue action: %s", func.__name__)
 
@@ -159,11 +162,11 @@ class System():
         await self.__landing_finished()
         
 
-    async def takeoff(self):
+    async def takeoff(self, check_state=True):
         """Takeoff.
         
         Finishes when the system arrives at the minimum takeoff altitude."""
-        if await self.get_landed_state() != LandedState.ON_GROUND:
+        if check_state and await self.get_landed_state() != LandedState.ON_GROUND:
             self.log.warning("Cannot take-off, not on ground")
             return
             
@@ -190,6 +193,13 @@ class System():
             self.log.error("LAND: " + str(error))
 
         await self.__landing_finished()
+
+    
+    async def toggle_takeoff_land(self):
+        if await self.get_landed_state() == LandedState.ON_GROUND:
+            await self.takeoff(False)
+        else:
+            await self.land()
 
 
     async def start_offboard(self):

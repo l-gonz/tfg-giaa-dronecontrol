@@ -13,19 +13,21 @@ def map_gesture_to_action(system, gesture):
     if gesture == Gesture.NO_HAND:
         return system.queue_action(System.hold, interrupt=True)
     if gesture == Gesture.STOP:
-        return system.queue_action(System.land)
+        return system.queue_action(System.hold)
     if gesture == Gesture.FIST:
-        return system.queue_action(System.takeoff)
+        return system.queue_action(System.toggle_takeoff_land, interrupt=True)
+    if gesture == Gesture.BACKHAND:
+        return system.queue_action(System.return_home)
     if gesture == Gesture.POINT_UP:
         return system.queue_action(System.start_offboard)
     if gesture == Gesture.POINT_RIGHT:
-        return system.queue_action(System.set_velocity, params={"right": 1.0})
+        return system.queue_action(System.set_velocity, right=1.0)
     if gesture == Gesture.POINT_LEFT:
-        return system.queue_action(System.set_velocity, params={"right": -1.0})
+        return system.queue_action(System.set_velocity, right=-1.0)
     if gesture == Gesture.THUMB_RIGHT:
-        return system.queue_action(System.set_velocity, params={"forward": 1.0})
+        return system.queue_action(System.set_velocity, forward=1.0)
     if gesture == Gesture.THUMB_LEFT:
-        return system.queue_action(System.set_velocity, params={"forward": -1.0})
+        return system.queue_action(System.set_velocity, forward=-1.0)
     
 
 async def run_gui(gui: graphics.HandGui):
@@ -73,9 +75,6 @@ async def run():
     pilot_task = asyncio.create_task(system.start())
     gui.subscribe_to_gesture(lambda g: map_gesture_to_action(system, g))
 
-    if file_log:
-        log_task = asyncio.create_task(log_loop())
-
     while True:
         if not await run_gui(gui):
             break
@@ -83,7 +82,7 @@ async def run():
             break
 
     log.warning("System stop")
-    await cancel_pending(pilot_task, log_task)
+    await cancel_pending(pilot_task)
 
 
 def close_handlers():

@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntEnum
 import numpy as np
 import mediapipe.python.solutions.hands as mediapipe
 
@@ -8,21 +8,22 @@ class Gesture(Enum):
     NO_HAND = 0
     STOP = 1
     FIST = 2
-    POINT_UP = 3
-    POINT_RIGHT = 4
-    POINT_LEFT = 5
-    THUMB_RIGHT = 6
-    THUMB_LEFT = 7
+    BACKHAND = 3
+    POINT_UP = 4
+    POINT_RIGHT = 5
+    POINT_LEFT = 6
+    THUMB_RIGHT = 7
+    THUMB_LEFT = 8
 
 
-class Joint():
+class Joint(IntEnum):
     FIRST = 0
     MID_LOW = 1
     MID_UP = 2
     TIP = 3
 
 
-class FINGER():
+class Finger(IntEnum):
     THUMB = 0
     INDEX = 1
     MIDDLE = 2
@@ -30,7 +31,8 @@ class FINGER():
     LITTLE = 4
 
 
-VECTOR_UP = np.array([1, 0, 0])
+VECTOR_UP = np.array([0, -1, 0])
+VECTOR_RIGHT = np.array([1, 0, 0])
 THUMB_THRESHOLDS = {
     "Right": (85, 120),
     "Left": (65, 100)
@@ -40,6 +42,7 @@ THUMB_THRESHOLDS = {
 class Detector():
     """Detect hand gestures from joint landmarks."""
     EXTENDED_FINGER_THRESHOLD = 50
+    BACKHAND_THRESHOLD = 40
 
     def __init__(self):
         self.log = utils.make_stdout_logger(__name__)
@@ -55,11 +58,13 @@ class Detector():
 
         self.label = hand_label[0].classification[0].label
         is_finger_up = self.__get_finger_up_state()
-        if not any(is_finger_up[FINGER.INDEX:]):
+        if not any(is_finger_up[Finger.INDEX:]):
             return Gesture.FIST
-        if is_finger_up[FINGER.INDEX] and not any(is_finger_up[FINGER.MIDDLE:]):
+        if is_finger_up[Finger.INDEX] and not any(is_finger_up[Finger.MIDDLE:]):
             return self.__get_thumb_index_combination()
         if sum(is_finger_up) == 5:
+            if self.__is_backhand():
+                return Gesture.BACKHAND
             return Gesture.STOP
 
 
@@ -97,29 +102,42 @@ class Detector():
 
 
     def __get_point_gesture(self):
-        index = self.fingers[FINGER.INDEX]
-        index_vector = index[Joint.TIP] - index[Joint.FIRST]
-        angle = Detector.__angle(index_vector, VECTOR_UP)
+        index_vector = self.__get_finger_vector(Finger.INDEX)
+        angle = Detector.__angle(index_vector, VECTOR_RIGHT)
 
-        if angle > 0 and angle < 70:
+        if angle > 0 and angle < 60:
             return Gesture.POINT_RIGHT
-        elif angle > 70 and angle < 110:
+        elif angle > 60 and angle < 120:
             return Gesture.POINT_UP
-        elif angle > 110 and angle < 180:
+        elif angle > 120 and angle < 180:
             return Gesture.POINT_LEFT
         else:
             self.log.error("Could not detect point gesture")
 
 
     def __get_thumb_gesture(self):
-        thumb = self.fingers[FINGER.THUMB]
-        thumb_vector = thumb[Joint.TIP] - thumb[Joint.FIRST]
-        angle = Detector.__angle(thumb_vector, VECTOR_UP)
+        thumb_vector = self.__get_finger_vector(Finger.THUMB)
+        angle = Detector.__angle(thumb_vector, VECTOR_RIGHT)
         
         if angle > 0 and angle < THUMB_THRESHOLDS[self.label][0]:
             return Gesture.THUMB_RIGHT
         elif angle > THUMB_THRESHOLDS[self.label][1] and angle < 180:
             return Gesture.THUMB_LEFT
+
+
+    def __is_backhand(self):
+        vectors = [self.__get_finger_vector(f) for f in Finger]
+        thumb = Detector.__angle(vectors.pop(0), VECTOR_UP)
+        others = [Detector.__angle(v, VECTOR_RIGHT) for v in vectors]
+        return (thumb < Detector.BACKHAND_THRESHOLD and 
+            all((x < Detector.BACKHAND_THRESHOLD or 
+                180 - x < Detector.BACKHAND_THRESHOLD 
+                for x in others)))
+
+    
+    def __get_finger_vector(self, finger_name: Finger):
+        finger = self.fingers[finger_name]
+        return finger[Joint.TIP] - finger[Joint.FIRST]
 
 
     @staticmethod

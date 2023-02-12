@@ -34,7 +34,7 @@ class Follow():
             simulator = utils.get_wsl_host_ip()
         self.source = self.__get_source(simulator_ip, use_simulator)
 
-        self.pilot = System(ip, port, serial is not None, serial, -1)
+        self.pilot = System(ip, port, serial is not None, serial)
         self.controller = Controller(YAW_POINT, FWD_POINT_SIM if use_simulator else FWD_POINT_CAM, not use_simulator)
         self.is_follow_on = True
         self.is_keyboard_control_on = True
@@ -135,7 +135,7 @@ class Follow():
 
 
     async def __offboard_control(self, p1, p2):
-        if await self.pilot.is_offboard(True) and self.is_follow_on:
+        if await self.pilot.is_offboard() and self.is_follow_on:
             yaw, fwd = self.controller.control(p1, p2)
             await self.__fly(yaw, fwd)
 

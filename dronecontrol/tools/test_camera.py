@@ -137,7 +137,7 @@ class VideoCamera:
         if key_action is None:
             pass
         elif self.pilot and pilot.System.__name__ in key_action.__qualname__:
-            self.pilot.queue_action(key_action, interrupt=True)
+            self.pilot.queue_action(key_action)
         elif VideoCamera.__name__ in key_action.__qualname__:
             key_action(self)
 

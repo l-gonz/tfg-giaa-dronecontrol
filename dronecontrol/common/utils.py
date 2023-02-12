@@ -151,6 +151,10 @@ def keyboard_control(key: int):
         return pilot.System.move_yaw_left
     elif key == ord('e'): # Yaw right
         return pilot.System.move_yaw_right
+    elif key == ord('1'): # Up
+        return pilot.System.move_up
+    elif key == ord('3'): # Down
+        return pilot.System.move_down
     elif key == ord(' '): # Take picture / start video
         return tools.VideoCamera.trigger
     elif key == ord('<'): # Picture <> video

@@ -27,7 +27,7 @@ class System():
     TIMEOUT = 15
 
 
-    def __init__(self, ip=None, port=None, use_serial=False, serial_address=None, offboard_poll_time=2):
+    def __init__(self, ip=None, port=None, use_serial=False, serial_address=None):
         """
         Connection parameters to PX4 through MAVlink
 
@@ -44,10 +44,6 @@ class System():
         self.serial = (serial_address if serial_address else self.DEFAULT_SERIAL_ADDRESS) if use_serial else None
         self.mav = mavsdk.System()
         self.log = utils.make_stdout_logger(__name__)
-
-        self.offboard_poll_time = offboard_poll_time
-        self.last_offboard_poll = 0
-        self.is_offboard_cached = False
 
 
     def close(self):
@@ -216,7 +212,6 @@ class System():
             await self.return_home()
             return
 
-        self.is_offboard_cached = True
         self.log.info("System in offboard mode")
 
     
@@ -230,7 +225,6 @@ class System():
             self.log.error(f"Stopping offboard mode failed with error code: {error._result.result}")
             return
 
-        self.is_offboard_cached = False
         self.log.info("System exited offboard mode")
 
 
@@ -243,45 +237,35 @@ class System():
 
     async def set_velocity(self, forward=0.0, right=0.0, up=0.0, yaw=0.0):
         """Set the system's velocity in body coordinates."""
-        if not await self.is_offboard(True):
+        if not await self.is_offboard():
             self.log.warning("System is not in offboard move, it cannot move")
         else:
             await self.mav.offboard.set_velocity_body(
                 VelocityBodyYawspeed(forward, right, -up, yaw))
 
     
+    async def move_body_velocity(self, forward=0.0, right=0.0, up=0.0, yaw=0.0, time=1):
+        await self.set_velocity(forward, right, up, yaw)
+        await asyncio.sleep(time)
+        await self.set_velocity()
+
+    
     async def set_position_ned_yaw(self, position: PositionNedYaw):
         """Move the system to a target position."""
-        if not await self.is_offboard(True):
+        if not await self.is_offboard():
             self.log.warning("System is not in offboard move, it cannot move")
         else:
             await self.mav.offboard.set_position_ned(position)
 
 
-    async def move_yaw_right(self):
-        pos = await self.get_position_ned_yaw()
-        self.log.info(f"Current pos {pos}")
-        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m, pos.east_m, pos.down_m, pos.yaw_deg + 1))
-    async def move_yaw_left(self):
-        pos = await self.get_position_ned_yaw()
-        self.log.info(f"Current pos {pos}")
-        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m, pos.east_m, pos.down_m, pos.yaw_deg - 1))
-    async def move_fwd_positive(self):
-        pos = await self.get_position_ned_yaw()
-        self.log.info(f"Current pos {pos}")
-        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m + 0.5, pos.east_m, pos.down_m, pos.yaw_deg))
-    async def move_fwd_negative(self):
-        pos = await self.get_position_ned_yaw()
-        self.log.info(f"Current pos {pos}")
-        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m - 0.5, pos.east_m, pos.down_m, pos.yaw_deg))
-    async def move_right(self):
-        pos = await self.get_position_ned_yaw()
-        self.log.info(f"Current pos {pos}")
-        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m, pos.east_m + 0.5, pos.down_m, pos.yaw_deg))
-    async def move_left(self):
-        pos = await self.get_position_ned_yaw()
-        self.log.info(f"Current pos {pos}")
-        await self.set_position_ned_yaw(PositionNedYaw(pos.north_m, pos.east_m - 0.5, pos.down_m, pos.yaw_deg))
+    async def move_yaw_right(self): await self.move_body_velocity(yaw=2)
+    async def move_yaw_left(self): await self.move_body_velocity(yaw=-2)
+    async def move_fwd_positive(self): await self.move_body_velocity(forward=1)
+    async def move_fwd_negative(self): await self.move_body_velocity(forward=-1)
+    async def move_right(self): await self.move_body_velocity(right=1)
+    async def move_left(self): await self.move_body_velocity(right=-1)
+    async def move_up(self): await self.move_body_velocity(up=0.5)
+    async def move_down(self): await self.move_body_velocity(up=-0.5)
 
 
     async def get_position(self):
@@ -312,13 +296,8 @@ class System():
         return await System.get_async_generated(self.mav.telemetry.flight_mode())
 
     
-    async def is_offboard(self, cache_result=False):
-        if not cache_result or (self.offboard_poll_time > 0
-           and time.time() - self.last_offboard_poll > self.offboard_poll_time):
-            self.is_offboard_cached = await self.get_flight_mode() == FlightMode.OFFBOARD
-            self.last_offboard_poll = time.time()
-        
-        return self.is_offboard_cached
+    async def is_offboard(self):
+        return await self.mav.offboard.is_active()
 
 
     async def __landing_finished(self):

@@ -35,7 +35,7 @@ class Follow():
         self.source = self.__get_source(simulator_ip, use_simulator)
 
         self.pilot = System(ip, port, serial is not None, serial, -1)
-        self.controller = Controller(YAW_POINT, FWD_POINT_SIM if use_simulator else FWD_POINT_CAM)
+        self.controller = Controller(YAW_POINT, FWD_POINT_SIM if use_simulator else FWD_POINT_CAM, not use_simulator)
         self.is_follow_on = True
         self.is_keyboard_control_on = True
         self.measures = {

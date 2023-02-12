@@ -14,13 +14,14 @@ class Controller:
     ONES = np.asarray([1, 1])
 
     DEFAULT_YAW_TUNINGS = (-50, -0.5, 0)
+    DEFAULT_YAW_TUNINGS_INV = (50, 0.5, 0)
     DEFAULT_FWD_TUNINGS = (3, 0, 0)
 
-    def __init__(self, target_x, target_height) -> None:
+    def __init__(self, target_x, target_height, invert_yaw=False) -> None:
         self.log = utils.make_stdout_logger(__name__)
         
         self.yaw_pid = PID()
-        self.yaw_pid.tunings = self.DEFAULT_YAW_TUNINGS
+        self.yaw_pid.tunings = self.DEFAULT_YAW_TUNINGS if not invert_yaw else self.DEFAULT_YAW_TUNINGS_INV
         self.yaw_pid.setpoint = target_x
         self.yaw_pid.output_limits = (-self.MAX_YAW_VEL, self.MAX_YAW_VEL)
 

@@ -8,11 +8,6 @@ from msgpackrpc.error import TimeoutError
 
 from dronecontrol.common import utils
 
-try:
-    import pyrealsense2
-except:
-    print("No pyrealsense2 detected, Real Sense SDK will not be available")
-
 WIDTH = 640
 HEIGHT = 480
 

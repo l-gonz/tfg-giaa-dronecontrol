@@ -14,7 +14,7 @@ def map_gesture_to_action(system, gesture):
         return system.queue_action(System.hold, interrupt=True)
     if gesture == Gesture.STOP:
         return system.queue_action(System.hold)
-    if gesture == Gesture.FIST:
+    if gesture == Gesture.FIST and system.current_action_name != System.toggle_takeoff_land.__name__:
         return system.queue_action(System.toggle_takeoff_land, interrupt=True)
     if gesture == Gesture.BACKHAND:
         return system.queue_action(System.return_home)

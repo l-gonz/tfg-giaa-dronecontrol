@@ -26,15 +26,16 @@ description: >- # this means to ignore newlines until "baseurl:"
   of view to follow their movement.
 domain: l-gonz.github.io
 url: "https://l-gonz.github.io" # the base hostname & protocol for your site, e.g. http://example.com
-baseurl: "/tfg-giaa-dronecontrol/docs" # the subpath of your site, e.g. /blog
+baseurl: "/tfg-giaa-dronecontrol" # the subpath of your site, e.g. /blog
 twitter_username: "@xlaurita483"
 github_username:  l-gonz
 
 # Build settings
 markdown: kramdown
-theme: minima
+remote_theme: "mmistakes/minimal-mistakes@4.24.0"
 plugins:
   - jekyll-feed
+  - jekyll-include-cache
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list

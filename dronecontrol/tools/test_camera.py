@@ -69,9 +69,9 @@ class VideoCamera:
                 self.img = raw_img.copy()
 
                 if self.pose_detection:
-                    results = self.pose_detection.process(self.img)
-                    p1, p2 = detect(results, raw_img)
-                    input = Controller.get_input(p1, p2) if results.pose_landmarks else (0, 0)
+                    self.results = self.pose_detection.process(self.img)
+                    p1, p2 = detect(self.results, raw_img)
+                    input = Controller.get_input(p1, p2) if self.results.pose_landmarks else (0, 0)
                     utils.write_text_to_image(raw_img, f"Yaw input: {input[0]:.3f}, fwd input {input[1]:.3f}", 2)
 
             utils.write_text_to_image(raw_img, f"Mode {self.mode.name}: {'' if self.is_recording else 'not '} recording", 0)
@@ -122,7 +122,9 @@ class VideoCamera:
     
     def trigger(self):
         if self.mode == CameraMode.PICTURE:
-            utils.write_image(self.img)
+            img = self.img.copy()
+            detect(self.results, img)
+            utils.write_image(img)
         elif self.mode == CameraMode.VIDEO:
             if self.is_recording:
                 self.out.release()

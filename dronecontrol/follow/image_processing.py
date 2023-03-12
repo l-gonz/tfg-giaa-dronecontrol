@@ -4,6 +4,7 @@ import mediapipe as mp
 
 
 from dronecontrol.common.utils import Color
+from dronecontrol.common import utils
 from mediapipe.python.solutions.pose import PoseLandmark
 
 
@@ -41,7 +42,7 @@ def detect(results, image):
         return CAMERA_BOX[0], CAMERA_BOX[1]
     else:
         return p1, p2
-        
+
 
 
 def get_bounding_box(landmarks):

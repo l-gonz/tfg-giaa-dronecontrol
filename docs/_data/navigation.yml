@@ -1,0 +1,9 @@
+main:
+  - title: "Repository"
+    url: https://github.com/l-gonz/tfg-giaa-dronecontrol
+  - title: "Report"
+    url: /report/
+  - title: "Videos"
+    url: /videos/
+  - title: "About"
+    url: /about/

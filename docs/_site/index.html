@@ -44,7 +44,7 @@
     "@context": "https://schema.org",
     
       "@type": "Person",
-      "name": null,
+      "name": "Laura González Fernández",
       "url": "http://localhost:4000/tfg-giaa-dronecontrol/"
     
   }
@@ -85,7 +85,7 @@
 
   </head>
 
-  <body class="layout--home">
+  <body class="layout--splash">
     <nav class="skip-links">
   <ul>
     <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
@@ -107,9 +107,22 @@
         
         <a class="site-title" href="/tfg-giaa-dronecontrol/">
           Exploration of Vision-Based Control Solutions for PX4-Driven UAVs
-          
+          <span class="site-subtitle">Trabajo de Fin de Grado, Escuela de Ingeniería de Fuenlabrada, URJC</span>
         </a>
-        <ul class="visible-links"></ul>
+        <ul class="visible-links"><li class="masthead__menu-item">
+              <a href="https://github.com/l-gonz/tfg-giaa-dronecontrol">Repository</a>
+            </li><li class="masthead__menu-item">
+              <a href="/tfg-giaa-dronecontrol/report/">Report</a>
+            </li><li class="masthead__menu-item">
+              <a href="/tfg-giaa-dronecontrol/videos/">Videos</a>
+            </li><li class="masthead__menu-item">
+              <a href="/tfg-giaa-dronecontrol/about/">About</a>
+            </li></ul>
+        
+        <button class="search__toggle" type="button">
+          <span class="visually-hidden">Toggle search</span>
+          <i class="fas fa-search"></i>
+        </button>
         
         <button class="greedy-nav__toggle hidden" type="button">
           <span class="visually-hidden">Toggle menu</span>
@@ -125,56 +138,33 @@
     <div class="initial-content">
       
 
-
-
 <div id="main" role="main">
-  
-
-
-  <div class="archive">
+  <article class="splash" itemscope itemtype="https://schema.org/CreativeWork">
     
-      <h1 id="page-title" class="page__title"></h1>
+    
     
     
 
-
-<h3 class="archive__subtitle">Recent Posts</h3>
-
-
-
-
-<div class="entries-list">
-  
-    
-
-
-
-<div class="list__item">
-  <article class="archive__item" itemscope itemtype="https://schema.org/CreativeWork">
-    
-    <h2 class="archive__item-title no_toc" itemprop="headline">
+    <section class="page__content" itemprop="text">
       
-        <a href="/tfg-giaa-dronecontrol/jekyll/update/2023/03/12/welcome-to-jekyll.html" rel="permalink">Welcome to Jekyll!
-</a>
-      
-    </h2>
-    
 
-
-    <p class="archive__item-excerpt" itemprop="description">You’ll find this post in your _posts directory. Go ahead and edit it and re-build the site to see your changes. You can rebuild the site in many different wa...</p>
+    </section>
   </article>
 </div>
 
-  
-</div>
-
-
-
-
-  </div>
-</div>
     </div>
 
+    
+      <div class="search-content">
+        <div class="search-content__inner-wrap"><form class="search-content__form" onkeydown="return event.key != 'Enter';">
+    <label class="sr-only" for="search">
+      Enter your search term...
+    </label>
+    <input type="search" id="search" class="search-input" tabindex="-1" placeholder="Enter your search term..." />
+  </form>
+  <div id="results" class="results"></div></div>
+
+      </div>
     
 
     <div id="footer" class="page__footer">
@@ -194,7 +184,7 @@
   </ul>
 </div>
 
-<div class="page__footer-copyright">&copy; 2023 Exploration of Vision-Based Control Solutions for PX4-Driven UAVs. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+<div class="page__footer-copyright">&copy; 2023 Laura González Fernández. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
 
       </footer>
     </div>
@@ -204,6 +194,10 @@
 
 
 
+
+<script src="/tfg-giaa-dronecontrol/assets/js/lunr/lunr.min.js"></script>
+<script src="/tfg-giaa-dronecontrol/assets/js/lunr/lunr-store.js"></script>
+<script src="/tfg-giaa-dronecontrol/assets/js/lunr/lunr-en.js"></script>
 
 
 

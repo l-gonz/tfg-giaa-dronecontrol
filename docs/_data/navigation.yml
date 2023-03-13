@@ -7,3 +7,25 @@ main:
     url: /videos/
   - title: "About"
     url: /about/
+
+docs:
+  - title: "Videos: simulation"
+    children:
+    - title: "Test SITL: hand solution"
+      url: "/videos/test-sitl-hand"
+    - title: "Test SITL: follow solution"
+      url: "/videos/test-sitl-follow"
+    - title: "Tune yaw controller"
+      url: "/videos/tune-yaw-controller"
+    - title: "Test yaw controller"
+      url: "/videos/test-yaw-controller"
+  - title: "Videos: flight tests"
+    children:
+    - title: "Offboard config"
+      url: "/videos/flight-test-offboard"
+    - title: "Onboard config"
+      url: "/videos/flight-test-onboard"
+    - title: "Hand solution"
+      url: "/videos/flight-test-hand"
+    - title: "Follow solution"
+      url: "/videos/flight-test-follow"

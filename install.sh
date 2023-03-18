@@ -1,6 +1,6 @@
 #!/bin/bash
-PX4="PX4-Autopilot"
 
+#Update
 sudo apt-get update && \
     apt-get install -y git && \
     apt-get -y autoremove && \
@@ -11,6 +11,7 @@ mkdir Firmware
 cd Firmware
 
 # PX4
+PX4="PX4-Autopilot"
 if [[ ! -d $PX4 ]]
 then
     git clone https://github.com/PX4/PX4-Autopilot.git
@@ -31,9 +32,6 @@ chmod u+x ./QGroundControl.AppImage
 # Build
 cd $PX4
 DONT_RUN=1 make px4_sitl_default none_iris 
-
-# WSL (happens automatically if using ./simulator.sh --airsim)
-# export PX4_SIM_HOST_ADDR=<windows host ip on WSL network>
 
 # Dronecontrol
 python3 -m venv venv

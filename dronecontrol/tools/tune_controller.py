@@ -5,7 +5,7 @@ from mavsdk.offboard import PositionNedYaw
 from mavsdk.action import ActionError
 from mediapipe.python.solution_base import SolutionBase
 
-from dronecontrol.common import utils
+from dronecontrol.common import utils, input
 from dronecontrol.follow.controller import Controller
 from dronecontrol.follow.follow import Follow
 from dronecontrol.common.pilot import System
@@ -18,7 +18,8 @@ class TunePIDController:
 
     def __init__(self, tune_yaw=True, manual=False, sample_time=20, kp_values=[], ki_values=[], kd_values=[]):
         self.log = utils.make_stdout_logger(__name__)
-        self.follow = Follow(port=14550, simulator="") 
+        self.input_handler = input.InputHandler()
+        self.follow = Follow(port=14550, simulator="")
 
         self.follow.is_follow_on = True
         self.follow.is_keyboard_control_on = False
@@ -129,7 +130,7 @@ class TunePIDController:
 
 
     async def keyboard_control(self, key):
-        key_action = utils.keyboard_control(key)
+        key_action = self.input_handler.handle(key)
         if key_action:
             if System.__name__ in key_action.__qualname__:
                 try:

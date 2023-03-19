@@ -6,7 +6,7 @@ import asyncio
 from enum import Enum
 import mediapipe as mp
 
-from dronecontrol.common import utils, pilot
+from dronecontrol.common import utils, pilot, input
 from dronecontrol.common.video_source import CameraSource, SimulatorSource, FileSource
 from dronecontrol.follow.controller import Controller
 from dronecontrol.hands.graphics import HandGui
@@ -31,6 +31,7 @@ class VideoCamera:
                  image_detection, hardware_address=None, simulator_ip=None,
                  file=None):
         self.log = utils.make_stdout_logger(__name__)
+        self.input_handler = input.InputHandler()
         self.pilot = None
         if use_simulator or use_hardware:
             port = 14550 if use_simulator else None
@@ -139,7 +140,7 @@ class VideoCamera:
 
 
     def __handle_key_input(self):
-        key_action = utils.keyboard_control(cv2.waitKey(self.source.get_delay()))
+        key_action = self.input_handler.handle(cv2.waitKey(self.source.get_delay()))
         if key_action is None:
             pass
         elif self.pilot and pilot.System.__name__ in key_action.__qualname__:

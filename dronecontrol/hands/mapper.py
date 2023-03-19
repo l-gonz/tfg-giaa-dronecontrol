@@ -1,7 +1,7 @@
 import asyncio
 import traceback
 
-from dronecontrol.common import utils, pilot
+from dronecontrol.common import utils, pilot, input
 from dronecontrol.hands import graphics
 from .gestures import Gesture
 
@@ -38,7 +38,7 @@ async def run_gui(gui: graphics.HandGui):
     try:
         gui.capture()
         key = gui.render()
-        key_action = utils.keyboard_control(key)
+        key_action = input_handler.handle(key)
         if key_action:
             pilot.queue_action(key_action, interrupt=True)  
     except Exception as e:
@@ -98,9 +98,10 @@ def close_handlers():
 
 
 def main(ip=None, port=None, serial=None, video_file=None, log_to_file=False):
-    global log, file_log, pilot, gui
+    global log, file_log, pilot, gui, input_handler
     log = utils.make_stdout_logger(__name__)
     file_log = utils.make_file_logger(__name__) if log_to_file else None
+    input_handler = input.InputHandler()
 
     pilot = pilot.System(ip=ip, port=port, use_serial=serial is not None, serial_address=serial)
     gui = graphics.HandGui(video_file, log_video=log_to_file and not video_file)

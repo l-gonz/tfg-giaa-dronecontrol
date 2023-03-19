@@ -8,7 +8,7 @@ import numpy as np
 from mediapipe.python.solution_base import SolutionBase
 from mavsdk.action import ActionError
 
-from dronecontrol.common import utils
+from dronecontrol.common import utils, input
 from dronecontrol.common.video_source import CameraSource, SimulatorSource
 from dronecontrol.common.pilot import System
 from dronecontrol.follow import image_processing
@@ -24,6 +24,7 @@ FWD_POINT_CAM = 0.5 # 50% of screen height for real flight camera
 class Follow():
     def __init__(self, ip="", port=None, serial=None, simulator_ip=None, log=None, log_to_file=False):
         self.log = utils.make_stdout_logger(__name__) if log is None else log
+        self.input_handler = input.InputHandler()
         self.file_log = utils.make_file_logger(__name__) if log_to_file else None
         self.last_run_time = time.time()
         self.image_events = []
@@ -142,7 +143,7 @@ class Follow():
 
     async def __manual_input_control(self, pose):
         key = cv2.waitKey(self.source.get_delay())
-        key_action = utils.keyboard_control(key)
+        key_action = self.input_handler.handle(key)
         if key_action:
             if System.__name__ in key_action.__qualname__:
                 try:

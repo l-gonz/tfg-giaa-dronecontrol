@@ -56,7 +56,13 @@ class VideoCamera:
         
 
     async def run(self):
-        pilot_task = asyncio.create_task(self.pilot.start()) if self.pilot else None
+        if self.pilot and not self.pilot.is_ready:
+            try:
+                await self.pilot.connect()
+            except asyncio.exceptions.TimeoutError:
+                self.log.error("Connection time-out")
+                return
+        pilot_task = asyncio.create_task(self.pilot.start_queue()) if self.pilot else None
         
         while True:
             if self.hand_detection:

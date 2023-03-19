@@ -1,33 +1,32 @@
 import asyncio
 import traceback
 
-from dronecontrol.common import utils
+from dronecontrol.common import utils, pilot
 from dronecontrol.hands import graphics
 from .gestures import Gesture
-from ..common.pilot import System
 
 
-def map_gesture_to_action(system, gesture):
+def map_gesture_to_action(pilot, gesture):
     """Map a hand gesture to a drone action."""
     
     if gesture == Gesture.NO_HAND:
-        return system.queue_action(System.hold, interrupt=True)
+        return pilot.queue_action(System.hold, interrupt=True)
     if gesture == Gesture.STOP:
-        return system.queue_action(System.hold)
-    if gesture == Gesture.FIST and system.current_action_name != System.toggle_takeoff_land.__name__:
-        return system.queue_action(System.toggle_takeoff_land, interrupt=True)
+        return pilot.queue_action(System.hold)
+    if gesture == Gesture.FIST and pilot.current_action_name != System.toggle_takeoff_land.__name__:
+        return pilot.queue_action(System.toggle_takeoff_land, interrupt=True)
     if gesture == Gesture.BACKHAND:
-        return system.queue_action(System.return_home)
+        return pilot.queue_action(System.return_home)
     if gesture == Gesture.POINT_UP:
-        return system.queue_action(System.start_offboard)
+        return pilot.queue_action(System.start_offboard)
     if gesture == Gesture.POINT_RIGHT:
-        return system.queue_action(System.set_velocity, right=1.0)
+        return pilot.queue_action(System.set_velocity, right=1.0)
     if gesture == Gesture.POINT_LEFT:
-        return system.queue_action(System.set_velocity, right=-1.0)
+        return pilot.queue_action(System.set_velocity, right=-1.0)
     if gesture == Gesture.THUMB_RIGHT:
-        return system.queue_action(System.set_velocity, forward=1.0)
+        return pilot.queue_action(System.set_velocity, forward=1.0)
     if gesture == Gesture.THUMB_LEFT:
-        return system.queue_action(System.set_velocity, forward=-1.0)
+        return pilot.queue_action(System.set_velocity, forward=-1.0)
     
 
 async def run_gui(gui: graphics.HandGui):
@@ -41,7 +40,7 @@ async def run_gui(gui: graphics.HandGui):
         key = gui.render()
         key_action = utils.keyboard_control(key)
         if key_action:
-            system.queue_action(key_action, interrupt=True)  
+            pilot.queue_action(key_action, interrupt=True)  
     except Exception as e:
         log.error(e)
         traceback.print_exc()
@@ -55,7 +54,7 @@ async def log_loop():
     try:
         while True:
             log.info("LOG loop")
-            await utils.log_system_info(file_log, system, gui.get_current_gesture())
+            await utils.log_system_info(file_log, pilot, gui.get_current_gesture())
             await asyncio.sleep(0.1)
     except (asyncio.CancelledError, KeyboardInterrupt):
         log.warning("End of log loop")
@@ -72,8 +71,15 @@ async def cancel_pending(*tasks):
 
 async def run():
     """Runs the GUI loop and the drone control thread simultaneously."""
-    pilot_task = asyncio.create_task(system.start())
-    gui.subscribe_to_gesture(lambda g: map_gesture_to_action(system, g))
+    if not pilot.is_ready:
+        try:
+            await pilot.connect()
+        except asyncio.exceptions.TimeoutError:
+            log.error("Connection time-out")
+            return
+
+    pilot_task = asyncio.create_task(pilot.start_queue())
+    gui.subscribe_to_gesture(lambda g: map_gesture_to_action(pilot, g))
 
     while True:
         if not await run_gui(gui):
@@ -87,16 +93,16 @@ async def run():
 
 def close_handlers():
     gui.close()
-    system.close()
+    pilot.close()
     utils.close_file_logger(file_log)
 
 
 def main(ip=None, port=None, serial=None, video_file=None, log_to_file=False):
-    global log, file_log, system, gui
+    global log, file_log, pilot, gui
     log = utils.make_stdout_logger(__name__)
     file_log = utils.make_file_logger(__name__) if log_to_file else None
 
-    system = System(ip=ip, port=port, use_serial=serial is not None, serial_address=serial)
+    pilot = pilot.System(ip=ip, port=port, use_serial=serial is not None, serial_address=serial)
     gui = graphics.HandGui(video_file, log_video=log_to_file and not video_file)
 
     try:

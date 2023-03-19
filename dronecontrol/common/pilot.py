@@ -50,7 +50,7 @@ class System():
         del self.mav
 
 
-    async def start(self):
+    async def start_queue(self):
         """
         Start the running loop.
         
@@ -58,16 +58,6 @@ class System():
         until they are finished.
         The loop will sleep if the queue is empty.
         """
-        #TODO: Rename to run_queue, move connect out of loop, use in follow
-        try:
-            await self.connect()
-        except asyncio.exceptions.CancelledError:
-            self.log.warning("Connection cancelled")
-            return
-        except asyncio.exceptions.TimeoutError:
-            self.log.error("Connection time-out")
-            return
-
         try:
             while True:
                 if len(self.actions) > 0:

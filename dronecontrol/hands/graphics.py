@@ -22,7 +22,7 @@ class HandGui():
     HEIGHT = 480
     
 
-    def __init__(self, file=None, max_num_hands=1, log_video=False, source=None):
+    def __init__(self, file=None, max_num_hands=1, source=None):
 
         self.log = utils.make_stdout_logger(__name__)
         self.__gesture_event_handler = []
@@ -38,25 +38,15 @@ class HandGui():
         self.__source = source if source else HandGui.__get_source(file)
         self.img = self.__source.get_blank()
 
-        self.__video_writer = None
-        if log_video:
-            self.__video_writer = cv2.VideoWriter(f"img/video_{__name__}_{datetime.now():%d%m%y%H%M%S}.mp4", 
-                cv2.VideoWriter_fourcc('M','J','P','G'), 30, self.__source.get_size())
-
 
     def close(self):
         cv2.waitKey(1)
         self.__source.close()
 
-        if self.__video_writer:
-            self.__video_writer.release()
-
 
     def capture(self):
         """Capture image from webcam and extract hand gesture."""
         self.img = self.__source.get_frame()
-        if self.__video_writer:
-            self.__video_writer.write(self.img)
 
         results = self.get_landmarks()
         self.hand_landmarks = results.multi_hand_landmarks

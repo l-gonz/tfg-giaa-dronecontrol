@@ -27,7 +27,7 @@ class ControlTest:
 
         # MAVsdk with SITL only works on port 14550, airsim port can be whatever
         # Maybe is because AirSim already starts mavsdk server in default port?
-        self.follow = Follow(port=14550, simulator="") 
+        self.follow = Follow(port=14550, simulator_ip="") 
 
         self.data = {}
         self.target_index = 0
@@ -39,9 +39,13 @@ class ControlTest:
         self.follow.is_follow_on = False
 
         if data_file:
-             with open(data_file, "r") as outfile:
-                self.data = json.load(outfile)
-                self.plot_data()
+            try:
+                with open(data_file, "r") as outfile:
+                    self.data = json.load(outfile)
+                    self.plot_data()
+            except FileNotFoundError as e:
+                self.log.error(e)
+            finally:
                 raise KeyboardInterrupt
 
 

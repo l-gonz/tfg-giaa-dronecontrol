@@ -22,10 +22,9 @@ FWD_POINT_CAM = 0.5 # 50% of screen height for real flight camera
 
 
 class Follow():
-    def __init__(self, ip="", port=None, serial=None, simulator_ip=None, log=None, log_to_file=False):
+    def __init__(self, ip="", port=None, serial=None, simulator_ip=None, log=None):
         self.log = utils.make_stdout_logger(__name__) if log is None else log
         self.input_handler = input.InputHandler()
-        self.file_log = utils.make_file_logger(__name__) if log_to_file else None
         self.last_run_time = time.time()
         self.image_events = []
         use_simulator = simulator_ip is not None
@@ -39,16 +38,7 @@ class Follow():
         self.controller = Controller(YAW_POINT, FWD_POINT_SIM if use_simulator else FWD_POINT_CAM, not use_simulator)
         self.is_follow_on = True
         self.is_keyboard_control_on = True
-        self.measures = {
-            "proc_image": [],
-            "off_control": [],
-            "image_event": [],
-            "input": [],
-            "end_sleep": [],
-            "sub_image_1": [],
-            "sub_image_2": [],
-            "sub_image_3": [],
-        }
+        self.measures = {}
 
 
     async def run(self):
@@ -63,21 +53,28 @@ class Follow():
         with mp_pose.Pose() as pose:
             self.pose = pose
             while True:
-                self.p1, self.p2 = await utils.measure(self.__process_image, self.measures["proc_image"], True, pose)
-                await utils.measure(self.__offboard_control, self.measures["off_control"], True, self.p1, self.p2)
-                await utils.measure(self.__on_new_image, self.measures["image_event"], True)
+                await measure(self.__process_image, pose)
+                await measure(self.__offboard_control, self.p1, self.p2)
+                await measure(self.__on_new_image)
 
                 if self.is_keyboard_control_on:
                     try:
-                        await utils.measure(self.__manual_input_control, self.measures["input"], True, pose)
+                        await measure(self.__manual_input_control, pose)
                     except KeyboardInterrupt:
                         break
                 
-                await utils.measure(asyncio.sleep, self.measures["end_sleep"], True, 0.001)
+                await measure(asyncio.sleep, 0.001)
 
 
     def subscribe_to_image(self, func):
         self.image_events.append(func)
+
+    
+    async def measure(self, func, *args, is_async=True):
+        func_name = func.__name__
+        if func_name not in self.measures:
+            self.measures[func_name] = []
+        await utils.measure(func, self.measures[func_name], is_async, *args)
 
 
     def log_measures(self):
@@ -89,10 +86,9 @@ class Follow():
                 self.log.info(f"{i} - {key}: mean {np.mean(self.measures[key])} var {np.var(self.measures[key])}")
             self.measures[key] = []
 
+
     def close(self):
         self.pilot.close()
-        utils.close_file_logger(self.file_log)
-
         self.source.close()
         while cv2.waitKey(200) == 0:
             continue
@@ -101,9 +97,9 @@ class Follow():
                 
 
     async def __process_image(self, pose):
-        image = await utils.measure(self.source.get_frame, self.measures['sub_image_1'], False)
+        image = await measure(self.source.get_frame, is_async=False)
         try:
-            self.results = await utils.measure(pose.process, self.measures['sub_image_2'], False, image)
+            self.results = await measure(pose.process, image, is_async=False)
         except Exception as e:
             self.log.error("Image error: " + str(e))
             self.results.pose_landmarks = None
@@ -112,9 +108,13 @@ class Follow():
             except:
                 pose = mp_pose.Pose()
 
-        p1, p2 = await utils.measure(image_processing.detect, self.measures['sub_image_3'], False, self.results, image)
+        self.p1, self.p2 = await measure(image_processing.detect, self.results, image, is_async=False)
+        self.__show_image()
 
-        inputs = Controller.get_input(p1, p2)
+
+    def __show_image(self):
+        """Annontate image and show in a window."""
+        inputs = Controller.get_input(self.p1, self.p2)
         utils.write_text_to_image(image, f"Yaw input: {inputs[0]:.3} - fwd input: {inputs[1]:.3}")
         utils.write_text_to_image(image, f"Yaw output: {self.controller.last_yaw_vel:.3} - fwd output: {self.controller.last_fwd_vel:.3}", 2)
         utils.write_text_to_image(image, f"FPS: {1.0 / (time.time() - self.last_run_time):.3}", 0)
@@ -124,10 +124,6 @@ class Follow():
             cv2.imshow("Dronecontrol: follow", image)
         except cv2.error as e:
             self.log.error("Error rendering image:\n" + str(e))
-
-
-        await utils.log_system_info(self.file_log, self.pilot, self.results.pose_landmarks)
-        return p1, p2
 
 
     async def __fly(self, yaw, fwd):
@@ -170,9 +166,9 @@ class Follow():
                 self.log.error(e)
 
 
-def main(ip="", simulator=None, serial=None, log_to_file=False, port=None):
+def main(ip="", simulator=None, serial=None, port=None):
     log = utils.make_stdout_logger(__name__)
-    follow = Follow(ip, port, serial, simulator, log, log_to_file)
+    follow = Follow(ip, port, serial, simulator, log)
 
     try:
         asyncio.run(follow.run())

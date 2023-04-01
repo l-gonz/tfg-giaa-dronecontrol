@@ -50,16 +50,6 @@ async def run_gui(gui: graphics.HandGui):
     return True
 
 
-async def log_loop():
-    try:
-        while True:
-            log.info("LOG loop")
-            await utils.log_system_info(file_log, pilot, gui.get_current_gesture())
-            await asyncio.sleep(0.1)
-    except (asyncio.CancelledError, KeyboardInterrupt):
-        log.warning("End of log loop")
-
-
 async def cancel_pending(*tasks):
     """Stop previous running tasks."""
     for task in tasks:
@@ -94,17 +84,15 @@ async def run():
 def close_handlers():
     gui.close()
     pilot.close()
-    utils.close_file_logger(file_log)
 
 
-def main(ip=None, port=None, serial=None, video_file=None, log_to_file=False):
-    global log, file_log, pilot, gui, input_handler
+def main(ip=None, port=None, serial=None, video_file=None):
+    global log, pilot, gui, input_handler
     log = utils.make_stdout_logger(__name__)
-    file_log = utils.make_file_logger(__name__) if log_to_file else None
     input_handler = input.InputHandler()
 
     pilot = pilot.System(ip=ip, port=port, use_serial=serial is not None, serial_address=serial)
-    gui = graphics.HandGui(video_file, log_video=log_to_file and not video_file)
+    gui = graphics.HandGui(video_file)
 
     try:
         asyncio.run(run())

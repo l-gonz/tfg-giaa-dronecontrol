@@ -106,6 +106,10 @@ def __get_text_pos(image, channel) -> typing.Tuple[int,int]:
 
 
 def get_wsl_host_ip():
+    """
+    In a Linux system, returns the IP of the host Windows 
+    computer on the internal virtual network.
+    """
     ip = ""
     if not os.path.exists("/etc/resolv.conf"):
         return ip

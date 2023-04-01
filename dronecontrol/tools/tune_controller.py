@@ -19,7 +19,7 @@ class TunePIDController:
     def __init__(self, tune_yaw=True, manual=False, sample_time=20, kp_values=[], ki_values=[], kd_values=[]):
         self.log = utils.make_stdout_logger(__name__)
         self.input_handler = input.InputHandler()
-        self.follow = Follow(port=14550, simulator="")
+        self.follow = Follow(port=14550, simulator_ip="")
 
         self.follow.is_follow_on = True
         self.follow.is_keyboard_control_on = False
@@ -40,7 +40,12 @@ class TunePIDController:
 
 
     async def run(self):
-        await self.follow.pilot.connect()
+        try:
+            await self.follow.pilot.connect()
+        except Exception as e:
+            self.log.error(e)
+            return
+
         await asyncio.sleep(5)
         await self.follow.pilot.takeoff()
         await asyncio.sleep(2)

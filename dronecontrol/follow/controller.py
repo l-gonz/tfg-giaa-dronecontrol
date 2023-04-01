@@ -54,12 +54,6 @@ class Controller:
         self._fwd_output_detail_list.append(self.fwd_pid.components)
         self._time_list.append(time.time() - self._start_time)
 
-        # Stop control when close enough
-        # if abs(1 - yaw_input / self.yaw_pid.SetPoint) < self.ALLOWED_ERROR:
-        #     yaw_vel = 0
-        # if abs(1 - fwd_input / self.fwd_pid.SetPoint) < self.ALLOWED_ERROR:
-        #     fwd_vel = 0
-
         self.last_yaw_vel = (float)(yaw_vel)
         self.last_fwd_vel = (float)(fwd_vel)
         return yaw_vel, fwd_vel
@@ -122,7 +116,6 @@ class Controller:
     def __get_fwd_point_from_box(p1, p2):
         return (float)(p2[1] - p1[1])
 
-    
     @staticmethod
     def get_input(p1, p2):
         return (Controller.__get_yaw_point_from_box(p1, p2), Controller.__get_fwd_point_from_box(p1, p2))

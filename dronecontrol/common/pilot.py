@@ -123,6 +123,7 @@ class System():
 
 
     async def is_connected(self):
+        """Chech if the system is connected through MAVLink."""
         return (await System.get_async_generated(self.mav.core.connection_state())).is_connected
 
 
@@ -219,6 +220,7 @@ class System():
 
 
     async def toggle_offboard(self):
+        """Toggle offboard according to the current state."""
         if await self.is_offboard():
             await self.stop_offboard()
         else:
@@ -235,6 +237,7 @@ class System():
 
     
     async def move_body_velocity(self, forward=0.0, right=0.0, up=0.0, yaw=0.0, time=1):
+        """Move in a particular direction for a set time."""
         await self.set_velocity(forward, right, up, yaw)
         await asyncio.sleep(time)
         await self.set_velocity()
@@ -248,6 +251,7 @@ class System():
             await self.mav.offboard.set_position_ned(position)
 
 
+    # Utility functions to move in every direction
     async def move_yaw_right(self): await self.move_body_velocity(yaw=2)
     async def move_yaw_left(self): await self.move_body_velocity(yaw=-2)
     async def move_fwd_positive(self): await self.move_body_velocity(forward=1)

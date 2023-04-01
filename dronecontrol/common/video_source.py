@@ -4,7 +4,7 @@ import airsim
 
 from abc import ABC, abstractmethod
 from math import tan, pi
-from msgpackrpc.error import TimeoutError
+from msgpackrpc.error import TimeoutError, TransportError
 
 from dronecontrol.common import utils
 
@@ -110,9 +110,14 @@ class SimulatorSource(VideoSource):
             self.__source = airsim.MultirotorClient(ip, timeout_value=100)
         except TimeoutError:
             self.log.error("AirSim did not respond before timeout")
-        self.log.info("AirSim connected")
 
-        self.height, self.width, _ = self.get_frame().shape
+        try:
+            self.height, self.width, _ = self.get_frame().shape
+        except TransportError:
+            self.log.error("Could not retrive image from AirSim")
+            return
+            
+        self.log.info("AirSim connected")
 
     def get_frame(self):
         image = self.__source.simGetImages([

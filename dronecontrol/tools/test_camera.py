@@ -79,9 +79,9 @@ class VideoCamera:
                     results = self.pose_detection.process(self.img)
                     p1, p2 = detect(results, raw_img)
                     input = Controller.get_input(p1, p2) if results.pose_landmarks else (0, 0)
-                    utils.write_text_to_image(raw_img, f"Yaw input: {input[0]:.3f}, fwd input {input[1]:.3f}", 2)
+                    utils.write_text_to_image(raw_img, f"Yaw input: {input[0]:.3f}, fwd input {input[1]:.3f}", utils.ImageLocation.BOTTOM_LEFT_LINE_TWO)
 
-            utils.write_text_to_image(raw_img, f"Mode {self.mode.name}: {'' if self.is_recording else 'not '} recording", 0)
+            utils.write_text_to_image(raw_img, f"Mode {self.mode.name}: {'' if self.is_recording else 'not '} recording", utils.ImageLocation.TOP_LEFT)
             utils.write_text_to_image(raw_img, f"FPS: {1.0 / (time.time() - self.last_run_time):.3f}")
             self.last_run_time = time.time()
             cv2.imshow("Dronecontrol: test camera", raw_img)

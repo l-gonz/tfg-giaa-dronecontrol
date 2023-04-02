@@ -33,16 +33,20 @@ class Finger(IntEnum):
 
 VECTOR_UP = np.array([0, -1, 0])
 VECTOR_RIGHT = np.array([1, 0, 0])
+
+# Angle thresholds for detecting the direction a thumb is pointing towards
+# depending of if it's the right or the left hand
 THUMB_THRESHOLDS = {
     "Right": (85, 120),
     "Left": (65, 100)
 }
 
+EXTENDED_FINGER_THRESHOLD = 50
+BACKHAND_THRESHOLD = 40
+
 
 class Detector():
     """Detect hand gestures from joint landmarks."""
-    EXTENDED_FINGER_THRESHOLD = 50
-    BACKHAND_THRESHOLD = 40
 
     def __init__(self):
         self.log = utils.make_stdout_logger(__name__)
@@ -87,7 +91,7 @@ class Detector():
             base = finger[Joint.FIRST] - self.wrist
             tip = finger[Joint.TIP] - finger[Joint.FIRST]
             angle = Detector.__angle(base, tip)
-            is_open.append(angle < self.EXTENDED_FINGER_THRESHOLD)
+            is_open.append(angle < EXTENDED_FINGER_THRESHOLD)
         return is_open
 
     
@@ -129,9 +133,9 @@ class Detector():
         vectors = [self.__get_finger_vector(f) for f in Finger]
         thumb = Detector.__angle(vectors.pop(0), VECTOR_UP)
         others = [Detector.__angle(v, VECTOR_RIGHT) for v in vectors]
-        return (thumb < Detector.BACKHAND_THRESHOLD and 
-            all((x < Detector.BACKHAND_THRESHOLD or 
-                180 - x < Detector.BACKHAND_THRESHOLD 
+        return (thumb < BACKHAND_THRESHOLD and 
+            all((x < BACKHAND_THRESHOLD or 
+                180 - x < BACKHAND_THRESHOLD 
                 for x in others)))
 
     

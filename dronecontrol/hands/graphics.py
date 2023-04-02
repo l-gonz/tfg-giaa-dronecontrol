@@ -28,7 +28,7 @@ class HandGui():
         self.__gesture_event_handler = []
         self.__current_time = 0
         self.__past_time = 0
-        self.__past_gesture = None
+        self.__last_gesture = None
 
         self.fps = 0
         self.hand_landmarks = None
@@ -40,6 +40,7 @@ class HandGui():
 
 
     def close(self):
+        """Close the current video source"""
         cv2.waitKey(1)
         self.__source.close()
 
@@ -53,8 +54,8 @@ class HandGui():
         self.hand_landmarks_world = results.multi_hand_world_landmarks
 
         gesture = self.detector.get_gesture(self.hand_landmarks, results.multi_handedness)
-        if gesture is not None and gesture != self.__past_gesture:
-            self.__past_gesture = gesture
+        if gesture is not None and gesture != self.__last_gesture:
+            self.__last_gesture = gesture
             self.__invoke_gesture(gesture)
 
 
@@ -69,7 +70,7 @@ class HandGui():
         if show_hands:
             self.draw_hands()
         if show_fps:
-            utils.write_text_to_image(self.img, f"FPS: {self.fps}", 0)
+            utils.write_text_to_image(self.img, f"FPS: {self.fps}", utils.ImageLocation.TOP_LEFT)
         cv2.imshow("Dronecontrol: hand-gesture control", self.img)
         return cv2.waitKey(self.__source.get_delay())
 
@@ -112,18 +113,7 @@ class HandGui():
 
 
     def get_current_gesture(self):
-        return self.__past_gesture
-
-
-    @staticmethod
-    def __get_source(file):
-        if file:
-            if os.path.exists(file):
-                return FileSource(file)
-            else:
-                raise FileNotFoundError
-        else:
-            return CameraSource()
+        return self.__last_gesture
 
 
     def __invoke_gesture(self, gesture):
@@ -139,9 +129,22 @@ class HandGui():
         fps = 1 / (self.__current_time - self.__past_time)
         self.__past_time = self.__current_time
         return int(fps)
+    
+
+    @staticmethod
+    def __get_source(file):
+        if file:
+            if os.path.exists(file):
+                return FileSource(file)
+            else:
+                raise FileNotFoundError
+        else:
+            return CameraSource()
 
 
-
+##############################
+############ TEST ############
+##############################
 if __name__ == "__main__":
     gui = HandGui()
     while True:

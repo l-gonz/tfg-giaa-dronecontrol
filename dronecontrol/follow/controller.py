@@ -5,6 +5,10 @@ import numpy as np
 import time
 
 class Controller:
+    """Wrapper class for the simple_pid library.
+    
+    Implements two PID controllers for obtaining yaw and forward 
+    velocity outputs from a detected bounding box."""
 
     MAX_FWD_VEL = 0.4
     MAX_YAW_VEL = 5

@@ -40,6 +40,7 @@ class VideoSource(ABC):
 
 
 class CameraSource(VideoSource):
+    """Video source to retrieve images from a connected camera."""
     def __init__(self, camera=0):
         self.__source = cv2.VideoCapture(camera)
         super().__init__()
@@ -70,6 +71,9 @@ class CameraSource(VideoSource):
 
 
 class FileSource(VideoSource):
+    """Video source to retrieve images from a video file.
+    
+    Raises VideoSourceEmpty when the end of the file is reached."""
     def __init__(self, file):
         self.__source = cv2.VideoCapture(file)
         super().__init__()
@@ -101,6 +105,7 @@ class FileSource(VideoSource):
 
 
 class SimulatorSource(VideoSource):
+    """Video source to retrieve images from an AirSim simulator."""
     def __init__(self, ip=""):
         self.height, self.width = 0, 0
         super().__init__()

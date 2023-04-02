@@ -1,3 +1,9 @@
+"""
+Utility module to map keyboard inputs to pilot or tool actions
+
+@author: Laura Gonzalez
+"""
+
 from mediapipe.python.solution_base import SolutionBase
 from dronecontrol.common import utils, pilot
 from dronecontrol.tools import tools

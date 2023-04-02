@@ -23,6 +23,17 @@ FWD_POINT_CAM = 0.5 # 50% of screen height for real flight camera
 
 class Follow():
     def __init__(self, ip="", port=None, serial=None, simulator_ip=None, log=None):
+        """
+        Follow-person control solution.
+
+        ip: IP to connect to a pilot system through UDP
+        port: port to connect to a pilot system through UDP, defaults to 14540
+        serial: address to connect to a pilot system through serial
+        simulator_ip: IP to connect to a simulator video source.
+                      None defaults to a camera source.
+                      Empty string connects to a simulator on localhost.
+        log: use an already created logger, makes a new one if None is provided 
+        """
         self.log = utils.make_stdout_logger(__name__) if log is None else log
         self.input_handler = input.InputHandler()
         self.last_run_time = time.time()
@@ -42,6 +53,7 @@ class Follow():
 
 
     async def run(self):
+        """Entry point for the running loop."""
         if not self.pilot.is_ready:
             try:
                 await self.pilot.connect()
@@ -49,7 +61,7 @@ class Follow():
                 self.log.error("Connection time-out")
                 return
 
-        # model_complexity=0
+        # Option: model_complexity=0
         with mp_pose.Pose() as pose:
             self.pose = pose
             while True:
@@ -67,10 +79,13 @@ class Follow():
 
 
     def subscribe_to_image(self, func):
+        """Subscribe a function to the image event,
+        to be called everytime a new frame is processed with the detected bounding box."""
         self.image_events.append(func)
 
     
     async def measure(self, func, *args, is_async=True):
+        """Call a function and log the execution time to the measures dictionary."""
         func_name = func.__name__
         if func_name not in self.measures:
             self.measures[func_name] = []
@@ -78,6 +93,7 @@ class Follow():
 
 
     def log_measures(self):
+        """Output average execution time for each recorded function across all iterations run."""
         for i, key in enumerate(self.measures):
             if i == 0:
                 self.log.info(f"Timing statistics for {len(self.measures[key])} loops")
@@ -88,6 +104,7 @@ class Follow():
 
 
     def close(self):
+        """Close external modules and tools."""
         self.pilot.close()
         self.source.close()
         while cv2.waitKey(200) == 0:
@@ -97,6 +114,7 @@ class Follow():
                 
 
     async def __process_image(self, pose):
+        """Run pose detection algorithm on a new frame and store bounding box."""
         image = await measure(self.source.get_frame, is_async=False)
         try:
             self.results = await measure(pose.process, image, is_async=False)
@@ -113,11 +131,11 @@ class Follow():
 
 
     def __show_image(self):
-        """Annontate image and show in a window."""
+        """Annotate image and show in a window."""
         inputs = Controller.get_input(self.p1, self.p2)
         utils.write_text_to_image(image, f"Yaw input: {inputs[0]:.3} - fwd input: {inputs[1]:.3}")
         utils.write_text_to_image(image, f"Yaw output: {self.controller.last_yaw_vel:.3} - fwd output: {self.controller.last_fwd_vel:.3}", 2)
-        utils.write_text_to_image(image, f"FPS: {1.0 / (time.time() - self.last_run_time):.3}", 0)
+        utils.write_text_to_image(image, f"FPS: {1.0 / (time.time() - self.last_run_time):.3}", utils.ImageLocation.TOP_LEFT)
         self.last_run_time = time.time()
 
         try:
@@ -127,17 +145,19 @@ class Follow():
 
 
     async def __fly(self, yaw, fwd):
+        """Make the vehicle move with a set velocity."""
         await self.pilot.set_velocity(forward=fwd, yaw=yaw)
-        if fwd == 0: return
 
 
     async def __offboard_control(self, p1, p2):
+        """Check offboard control for driving the vehicle."""
         if await self.pilot.is_offboard() and self.is_follow_on:
             yaw, fwd = self.controller.control(p1, p2)
             await self.__fly(yaw, fwd)
 
 
     async def __manual_input_control(self, pose):
+        """Handle manual input to the pilot through the keyboard."""
         key = cv2.waitKey(self.source.get_delay())
         key_action = self.input_handler.handle(key)
         if key_action:
@@ -152,6 +172,7 @@ class Follow():
 
 
     def __get_source(self, ip, use_simulator):
+        """Select video source from the command-line options."""
         if use_simulator:
             return SimulatorSource(ip)
         else:
@@ -159,6 +180,7 @@ class Follow():
 
 
     async def __on_new_image(self):
+        """Call all subscribed functions to the image event."""
         for event in self.image_events:
             try:
                 await event(self.p1, self.p2)

@@ -8,7 +8,6 @@ from .gestures import Gesture
 
 def map_gesture_to_action(pilot, gesture):
     """Map a hand gesture to a drone action."""
-    
     if gesture == Gesture.NO_HAND:
         return pilot.queue_action(System.hold, interrupt=True)
     if gesture == Gesture.STOP:
@@ -34,7 +33,6 @@ async def run_gui(gui: graphics.HandGui):
     the image and render it.
     
     Return whether the loop should continue."""
-
     try:
         gui.capture()
         key = gui.render()
@@ -60,7 +58,7 @@ async def cancel_pending(*tasks):
 
 
 async def run():
-    """Runs the GUI loop and the drone control thread simultaneously."""
+    """Run the GUI loop and the drone control thread simultaneously."""
     if not pilot.is_ready:
         try:
             await pilot.connect()
@@ -87,6 +85,14 @@ def close_handlers():
 
 
 def main(ip=None, port=None, serial=None, video_file=None):
+    """
+    Hand-gesture control solution.
+
+    ip: IP to connect to a pilot system through UDP
+    port: port to connect to a pilot system through UDP, defaults to 14540
+    serial: address to connect to a pilot system through serial
+    video_file: file to use as a source for the computer vision algorithm
+    """
     global log, pilot, gui, input_handler
     log = utils.make_stdout_logger(__name__)
     input_handler = input.InputHandler()

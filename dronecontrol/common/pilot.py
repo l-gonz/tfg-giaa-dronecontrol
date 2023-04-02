@@ -316,7 +316,9 @@ class System():
             return item
 
 
-
+##############################
+############ TEST ############
+##############################
 async def test():
     drone = System(use_serial=True)
     await drone.mav.connect(system_address="serial:///dev/serial0:921600")  ### Serial - UART RPi

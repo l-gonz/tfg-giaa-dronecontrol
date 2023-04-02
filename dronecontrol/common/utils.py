@@ -29,6 +29,11 @@ class Color():
     BLUE = (255, 0, 0)
     RED = (0, 0, 255)
 
+class ImageLocation(Enum):
+    TOP_LEFT = 0
+    BOTTOM_LEFT = 1
+    BOTTOM_LEFT_LINE_TWO = 2
+
 
 def make_stdout_logger(name: str, level=logging.INFO) -> logging.Logger:
     """Return a dedicated logger for a module."""
@@ -61,6 +66,7 @@ def make_file_logger(name: str, level=logging.INFO, for_system_info=True) -> log
 
 
 def close_file_logger(logger: logging.Logger):
+    """Close the handlers on a file logger."""
     if logger is None:
         return
 
@@ -71,6 +77,7 @@ def close_file_logger(logger: logging.Logger):
 
 
 async def log_system_info(log: logging.Logger, pilot: pilot.System, tracking_info: str):
+    """Log useful information about a pilot system to a dedicated logger."""
     if log is None:
         return
 
@@ -87,21 +94,21 @@ async def log_system_info(log: logging.Logger, pilot: pilot.System, tracking_inf
     log.info('%s,%s,%s,%s,%s,%s', landed_state, flight_mode, position, attitude, velocity, tracking_info)
 
 
-def write_text_to_image(image, text, channel=1):
+def write_text_to_image(image, text, location=ImageLocation.BOTTOM_LEFT):
     """Annotate an image with the given text.
         
-    Several channels available for positioning the text."""
-    cv2.putText(image, str(text), __get_text_pos(image, channel),
+    Several locations available for positioning the text."""
+    cv2.putText(image, str(text), __get_text_pos(image, location),
         FONT, FONT_SCALE, Color.BLUE, FONT_SCALE)
 
 
-def __get_text_pos(image, channel) -> typing.Tuple[int,int]:
-    """Map channel number to pixel position."""
-    if channel == 0:
+def __get_text_pos(image, location: ImageLocation) -> typing.Tuple[int,int]:
+    """Map image location enum to pixel position."""
+    if location == ImageLocation.TOP_LEFT:
         return (10, 30)
-    if channel == 1:
+    if location == ImageLocation.BOTTOM_LEFT:
         return (10, image.shape[0] - 10)
-    if channel == 2:
+    if location == ImageLocation.BOTTOM_LEFT_LINE_TWO:
         return (10, image.shape[0] - 30)
 
 
@@ -123,7 +130,7 @@ def get_wsl_host_ip():
 
 
 def plot(x, y, subplots=None, block=True, title="TEST PID", xlabel="time (s)", ylabel="PID (PV)", legend=None):
-    """Utility function to plot data with different styles."""
+    """Helper function to plot data with different styles."""
     if len(x) == 0:
         return
     

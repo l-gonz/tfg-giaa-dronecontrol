@@ -10,7 +10,8 @@ header:
   overlay_filter: "0.3"
 excerpt: ""
 ---
-## By me
-This will include a video
+## Recorded simulation
+Tests the PID controllers in action.
+The purpose is to verify that the controllers are capable of reacting to changes in the position of the figure while keeping the movement slow and smooth.
 
 {% include video id="-CW-B27O4Y0" provider="youtube" %}

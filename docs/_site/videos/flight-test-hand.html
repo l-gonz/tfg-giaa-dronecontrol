@@ -10,7 +10,7 @@
     <meta charset="utf-8">
 
 <!-- begin _includes/seo.html --><title>Flight test: hand solution - Exploration of Vision-Based Control Solutions for PX4-Driven UAVs</title>
-<meta name="description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it approach- able for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
+<meta name="description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it  approachable for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
 
 
 
@@ -21,7 +21,7 @@
 <meta property="og:url" content="http://localhost:4000/tfg-giaa-dronecontrol/videos/flight-test-hand">
 
 
-  <meta property="og:description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it approach- able for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
+  <meta property="og:description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it  approachable for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
 
 
 
@@ -114,11 +114,11 @@
           <span class="site-subtitle">Trabajo de Fin de Grado, Escuela de Ingeniería de Fuenlabrada, URJC</span>
         </a>
         <ul class="visible-links"><li class="masthead__menu-item">
-              <a href="https://github.com/l-gonz/tfg-giaa-dronecontrol">Repository</a>
-            </li><li class="masthead__menu-item">
               <a href="/tfg-giaa-dronecontrol/report/">Report</a>
             </li><li class="masthead__menu-item">
               <a href="/tfg-giaa-dronecontrol/videos/">Videos</a>
+            </li><li class="masthead__menu-item">
+              <a href="https://github.com/l-gonz/tfg-giaa-dronecontrol">Repository</a>
             </li><li class="masthead__menu-item">
               <a href="/tfg-giaa-dronecontrol/about/">About</a>
             </li></ul>
@@ -258,8 +258,20 @@
 
       <section class="page__content" itemprop="text">
         
-        <h2 id="by-me">By me</h2>
-<p>This will include a video</p>
+        <h2 id="recorded-test-flight">Recorded test flight</h2>
+<p>The hand-gesture guidance system runs on an offboard computer with more available processing resources and no dependence on battery-supplied power to work.
+The setup will be identical to the <a href="flight-test-offboard">offboard</a> test flight with the telemetry radio as the serial link and the onboard companion computer turned off.
+Once the autopilot board is powered up, the control solution can be started with the following command, 
+where <device> is the COM port or TTY device the telemetry radio is attached to, depending on the platform:</device></p>
+
+<p style="text-align: center;">dronecontrol hand -s &lt;device&gt;:57600</p>
+
+<p>After the pilot connects, the image from the computer’s webcam will appear on the screen with an outline over any detected hand.
+An open palm should be shown to the camera to start controlling the vehicle.
+Then, a closed fist will make the drone take off, and pointing up with the index finger will start the offboard flight mode.
+Afterwards, moving the index finger right or left will make the vehicle mirror the movement, 
+and moving the thumb right or left will make the vehicle move forward and backwards, respectively.
+At any point during the test, an open hand will make the drone hover at its current place, as will losing sight of the controlling hand.</p>
 
 <!-- Courtesy of embedresponsively.com //-->
 

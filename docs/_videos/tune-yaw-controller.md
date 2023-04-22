@@ -10,7 +10,7 @@ header:
   overlay_filter: "0.3"
 excerpt: ""
 ---
-## By me
-This will include a video
+## Recorded simulation
+Tuning process for the yaw controller using the developed tune tool running on SITL and AirSim.
 
 {% include video id="zLal1dlgENI" provider="youtube" %}

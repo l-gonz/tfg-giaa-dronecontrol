@@ -10,7 +10,7 @@
     <meta charset="utf-8">
 
 <!-- begin _includes/seo.html --><title>Flight test: follow solution - Exploration of Vision-Based Control Solutions for PX4-Driven UAVs</title>
-<meta name="description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it approach- able for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
+<meta name="description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it  approachable for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
 
 
 
@@ -21,7 +21,7 @@
 <meta property="og:url" content="http://localhost:4000/tfg-giaa-dronecontrol/videos/flight-test-follow">
 
 
-  <meta property="og:description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it approach- able for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
+  <meta property="og:description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it  approachable for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
 
 
 
@@ -114,11 +114,11 @@
           <span class="site-subtitle">Trabajo de Fin de Grado, Escuela de Ingeniería de Fuenlabrada, URJC</span>
         </a>
         <ul class="visible-links"><li class="masthead__menu-item">
-              <a href="https://github.com/l-gonz/tfg-giaa-dronecontrol">Repository</a>
-            </li><li class="masthead__menu-item">
               <a href="/tfg-giaa-dronecontrol/report/">Report</a>
             </li><li class="masthead__menu-item">
               <a href="/tfg-giaa-dronecontrol/videos/">Videos</a>
+            </li><li class="masthead__menu-item">
+              <a href="https://github.com/l-gonz/tfg-giaa-dronecontrol">Repository</a>
             </li><li class="masthead__menu-item">
               <a href="/tfg-giaa-dronecontrol/about/">About</a>
             </li></ul>
@@ -258,8 +258,19 @@
 
       <section class="page__content" itemprop="text">
         
-        <h2 id="by-me">By me</h2>
-<p>This will include a video</p>
+        <h2 id="recorded-test-flight">Recorded test flight</h2>
+<p>This video tests the follow control solution. The companion computer
+is running the follow program, and validates whether it can
+keep track of and follow a moving target during a non-simulated flight. The setup will be
+identical to the third test in section 4.4.2, without needing a wireless telemetry connection.
+The telemetry radio is, therefore, free to be used, for example, to track the vehicle’s path
+through the QGroundControl application on a secondary, offboard computer. The control
+application will be started with the following command:</p>
+
+<p style="text-align: center;">dronecontrol follow -s /dev/serial0:921600</p>
+
+<p>This video shows the process of getting the vehicle to takeoff (T key), activating offboard
+flight mode (O key), and starting movement tracking of the detected figure.</p>
 
 <!-- Courtesy of embedresponsively.com //-->
 

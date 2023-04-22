@@ -10,7 +10,7 @@ header:
   overlay_filter: "0.3"
 excerpt: ""
 ---
-## By me
-This will include a video
+## Recorded simulation
+Test tuned yaw PID controller for smooth reaction to variable inputs on the horizontal axis.
 
 {% include video id="1_PXjVSoPiE" provider="youtube" %}

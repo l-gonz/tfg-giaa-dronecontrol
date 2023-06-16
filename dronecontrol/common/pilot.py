@@ -107,18 +107,13 @@ class System():
             address = f"udp://{self.ip if self.ip else ''}:{self.port}"
         self.log.info("Waiting for drone to connect on address " + address)
         await asyncio.wait_for(self.mav.connect(system_address=address), timeout=self.TIMEOUT)
+        
+        await System.wait_for_async_value(self.mav.core.connection_state(), is_connected=True)
         self.log.info("Connection established!")
 
-        async for state in self.mav.core.connection_state():
-            if state.is_connected:
-                break
-
-        # Wait for drone to have a global position estimate
-        async for health in self.mav.telemetry.health():
-            if health.is_global_position_ok:
-                break
-
+        await System.wait_for_async_value(self.mav.telemetry.health(), is_global_position_ok=True)
         self.log.info("System ready")
+
         self.is_ready = True
 
 
@@ -297,23 +292,26 @@ class System():
     async def __landing_finished(self):
         """Runs until the drone has finished landing."""
         await self.__wait_for_landed_state(LandedState.ON_GROUND)
-        async for armed in self.mav.telemetry.armed():
-            if not armed:
-                self.log.info("Landing complete")
-                break
+        await self.wait_for_async_value(self.mav.telemetry.armed(), False)
+        self.log.info("Landing complete")
     
 
-    async def __wait_for_landed_state(self, state):
+    async def __wait_for_landed_state(self, landed_state: LandedState):
         """Wait until the system's landed state match the expected one."""
-        async for current_state in self.mav.telemetry.landed_state():
-            if state == current_state:
-                break
+        await System.wait_for_async_value(self.mav.telemetry.landed_state(), landed_state)
 
 
     @staticmethod
     async def get_async_generated(generator):
         async for item in generator:
             return item
+
+    @staticmethod
+    async def wait_for_async_value(generator, value = None, **kwargs):
+        async for item in generator:
+            if ((value is None or item == value) and
+                (kwargs is None or len(kwargs) == 0 or all([getattr(item, key) == kwargs[key] for key in kwargs.keys()]))):
+                break
 
 
 ##############################

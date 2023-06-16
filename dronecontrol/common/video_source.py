@@ -107,24 +107,24 @@ class FileSource(VideoSource):
 class SimulatorSource(VideoSource):
     """Video source to retrieve images from an AirSim simulator."""
     def __init__(self, ip=""):
-        self.height, self.width = 0, 0
+        self.width, self.height = super().get_size()
         super().__init__()
 
-        self.log.info("Connecting to AirSim for camera source")
-        try:
-            self.__source = airsim.MultirotorClient(ip, timeout_value=100)
-        except TimeoutError:
-            self.log.error("AirSim did not respond before timeout")
+        self.log.info(f"Connecting to AirSim on {ip} for camera source")
+        self.__source = airsim.MultirotorClient(ip, timeout_value=100)
 
         try:
             self.height, self.width, _ = self.get_frame().shape
-        except TransportError:
-            self.log.error("Could not retrive image from AirSim")
+        except (TransportError, TimeoutError) as error:
+            self.log.error(f"Could not retrive image from AirSim\n{error}")
+            self.__source = None
             return
             
         self.log.info("AirSim connected")
 
     def get_frame(self):
+        if self.__source is None:
+            return self.get_blank()
         image = self.__source.simGetImages([
             airsim.ImageRequest("front_center", airsim.ImageType.Scene, False, False)
         ])[0]

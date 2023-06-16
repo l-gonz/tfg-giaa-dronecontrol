@@ -6,6 +6,7 @@ import numpy
 import time
 import matplotlib.pyplot as plt
 from datetime import datetime
+from enum import Enum
 from mediapipe.python.solution_base import SolutionBase
 
 from dronecontrol.tools import tools

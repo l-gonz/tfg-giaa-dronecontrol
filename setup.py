@@ -15,7 +15,7 @@ here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 setup(
-    name='dronecontrol',  # Required
+    name='DroneVisionControl',  # Required
     version='1.0',  # Required
     description='A vision-based control system for PX4 drones',  # Optional
     long_description=long_description,  # Optional
@@ -42,7 +42,7 @@ setup(
     python_requires='>=3.8, <4',
     entry_points={  # Optional
         'console_scripts': [
-            'dronecontrol=dronecontrol.cli:main',
+            'dronevisioncontrol=dronecontrol.cli:main',
         ],
     },
 

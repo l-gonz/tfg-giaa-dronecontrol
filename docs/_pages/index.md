@@ -19,22 +19,30 @@ intro:
   hardware with basic specifications. For this purpose, a viable solution is presented that
   allows a drone to use an onboard camera to identify and keep track of a person in its field
   of view to follow their movement.'
+    url: "/description/"
+    btn_label: "Read more"
 feature_row:
-  - image_path: assets/images/unsplash-gallery-image-1-th.jpg
-    image_caption: "Image courtesy of [Unsplash](https://unsplash.com/)"
-    alt: "placeholder image 1"
-    title: "Placeholder 1"
-    excerpt: "This is some sample content that goes here with **Markdown** formatting."
-  - image_path: /assets/images/unsplash-gallery-image-2-th.jpg
-    alt: "placeholder image 2"
-    title: "Placeholder 2"
-    excerpt: "This is some sample content that goes here with **Markdown** formatting."
-    url: "#test-link"
+  - image_path: /assets/images/video-hand-sitl-frontpage.png
+    alt: "Videos"
+    title: "Videos"
+    excerpt: "Recorded simulations and flight tests."
+    url: "/videos/"
     btn_label: "Open"
     btn_class: "btn--primary"
-  - image_path: /assets/images/unsplash-gallery-image-3-th.jpg
-    title: "Placeholder 3"
-    excerpt: "This is some sample content that goes here with **Markdown** formatting."
+  - image_path: /assets/images/software-arch-frontpage.jpg
+    alt: "Report front page"
+    title: "Report"
+    excerpt: 'Written report for the project.'
+    url: "/report/"
+    btn_label: "Open"
+    btn_class: "btn--primary"
+  - image_path: /assets/images/splash-page-github.jpg
+    alt: "GitHub"
+    title: "Repository"
+    excerpt: 'Project repository hosted on GitHub.'
+    url: "https://github.com/l-gonz/tfg-giaa-dronecontrol"
+    btn_label: "Open"
+    btn_class: "btn--primary"
 feature_row2:
   - image_path: /assets/images/video-hand-sitl.png
     alt: "Videos"
@@ -55,7 +63,7 @@ feature_row4:
   - image_path: /assets/images/splash-page-github.jpg
     alt: "GitHub"
     title: "Repository"
-    excerpt: 'Link to the project repository hosted on GitHub'
+    excerpt: 'Project repository hosted on GitHub'
     url: "https://github.com/l-gonz/tfg-giaa-dronecontrol"
     btn_label: "Open"
     btn_class: "btn--primary"
@@ -63,10 +71,10 @@ feature_row4:
 
 {% include feature_row id="intro" type="center" %}
 
-<!-- {% include feature_row %} -->
+{% include feature_row %}
 
-{% include feature_row id="feature_row2" type="left" %}
+<!-- {% include feature_row id="feature_row2" type="left" %} -->
 
-{% include feature_row id="feature_row3" type="right" %}
+<!-- {% include feature_row id="feature_row3" type="right" %} -->
 
-{% include feature_row id="feature_row4" type="center" %}
+<!-- {% include feature_row id="feature_row4" type="center" %} -->

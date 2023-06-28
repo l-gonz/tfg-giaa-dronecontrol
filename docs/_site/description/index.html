@@ -9,7 +9,7 @@
   <head>
     <meta charset="utf-8">
 
-<!-- begin _includes/seo.html --><title>About - Exploration of Vision-Based Control Solutions for PX4-Driven UAVs</title>
+<!-- begin _includes/seo.html --><title>The project - Exploration of Vision-Based Control Solutions for PX4-Driven UAVs</title>
 <meta name="description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it  approachable for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
 
 
@@ -17,8 +17,8 @@
 <meta property="og:type" content="website">
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Exploration of Vision-Based Control Solutions for PX4-Driven UAVs">
-<meta property="og:title" content="About">
-<meta property="og:url" content="http://localhost:4000/tfg-giaa-dronecontrol/about/">
+<meta property="og:title" content="The project">
+<meta property="og:url" content="http://localhost:4000/tfg-giaa-dronecontrol/description/">
 
 
   <meta property="og:description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it  approachable for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
@@ -34,7 +34,7 @@
 
 
 
-<link rel="canonical" href="http://localhost:4000/tfg-giaa-dronecontrol/about/">
+<link rel="canonical" href="http://localhost:4000/tfg-giaa-dronecontrol/description/">
 
 
 
@@ -168,11 +168,11 @@
         
         <ul>
           
-            <li><a href="/tfg-giaa-dronecontrol/description/">The project</a></li>
+            <li><a href="/tfg-giaa-dronecontrol/description/" class="active">The project</a></li>
           
             <li><a href="/tfg-giaa-dronecontrol/report/">Thesis report</a></li>
           
-            <li><a href="/tfg-giaa-dronecontrol/about/" class="active">About</a></li>
+            <li><a href="/tfg-giaa-dronecontrol/about/">About</a></li>
           
         </ul>
         
@@ -228,7 +228,7 @@
 
 
   <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
-    <meta itemprop="headline" content="About">
+    <meta itemprop="headline" content="The project">
     
     
     
@@ -236,7 +236,7 @@
     <div class="page__inner-wrap">
       
         <header>
-          <h1 id="page-title" class="page__title" itemprop="headline">About
+          <h1 id="page-title" class="page__title" itemprop="headline">The project
 </h1>
           
 
@@ -246,11 +246,21 @@
 
       <section class="page__content" itemprop="text">
         
-        <p>Presentation website for my final project for the Bachelor in Aerospace Engineering in Aeronavigation, pursued at the Rey Juan Carlos University.</p>
+        <p>The project outlined here is a comprehensive exploration of the tools available for designing and implementing control solutions for the PX4 open-source autopilot platform. The goal is to demonstrate how these tools can be integrated with computer vision mechanisms to achieve vision-based self-guided unmanned aerial vehicles (UAVs). To achieve this objective, a simple application named DroneVisionControl has been developed. It aims to serve as a foundation for the investigation into the PX4 ecosystem and methods of integrating the necessary hardware and software for UAV control. For the computer vision detection mechanisms, the ready-to-use Mediapipe suite of libraries for real-time image analyses on hand-held devices has been employed to reduce the project’s complexity. Two primary architectures for integrating software and hardware in vision-based scenarios have been proposed, with one scenario involving offboard vision modules and the other integrating onboard camera and vision computation.</p>
 
-<p><a href="https://www.linkedin.com/in/lauragonfer/">My LinkedIn page</a></p>
+<p>The first scenario involves a proof-of-concept control mechanism that translates hand gestures executed in front of an independent camera to flight commands, thereby controlling the vehicle’s movement. This mechanism functions as a landing platform to begin development and test the most basic integration between the tools employed. The second scenario builds upon the first to integrate the camera and vision computation onboard the vehicle to develop a tracking and following control solution. This mechanism will track and follow a person standing in the drone’s field of view, mirroring their movements in a 3D environment.</p>
 
-<p><a href="https://github.com/l-gonz/">My GitHub page</a></p>
+<p>A dedicated development environment was employed to further the development of these control mechanisms. This environment facilitated the design process by allowing a gradual adaptation of the software to match the hardware requirements, starting from a purely simulated flight controller and progressing towards actual flight tests in an unmanned vehicle. The critical component of this environment is the integration with the AirSim simulation engine. Built upon the powerful 3D computer graphics game engine Unreal, it provides a platform that ensures secure and comprehensive testing of control solutions that are still a work in progress and not entirely reliable.</p>
+
+<p>For this project, all the code has been implemented in Python, running on a companion
+computer separate from the flight controller board. This deliberate approach ensures that
+the control solutions remain independent of the hardware components and are not tied
+to any particular flight stack. Consequently, the results can be applied to any autopilot
+platform that offers exposed APIs and are not limited to the PX4 ecosystem.</p>
+
+<p>In conclusion, this work offers a thorough investigation into the development of vision-
+based self-guided UAVs, presenting a range of tools and techniques that can be utilized to
+accomplish this objective.</p>
 
         
       </section>

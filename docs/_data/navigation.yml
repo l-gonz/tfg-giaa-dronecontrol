@@ -1,14 +1,23 @@
 main:
-  - title: "Report"
-    url: /report/
   - title: "Videos"
     url: /videos/
-  - title: "Repository"
-    url: https://github.com/l-gonz/tfg-giaa-dronecontrol
+  - title: "Report"
+    url: /report/
   - title: "About"
     url: /about/
+  - title: "Repository"
+    icon: "fab fa-fw fa-github"
+    url: https://github.com/l-gonz/tfg-giaa-dronecontrol
 
 docs:
+  - title: "Content"
+    children:
+    - title: "The project"
+      url: "/description/"
+    - title: "Thesis report"
+      url: "/report/"
+    - title: "About"
+      url: "/about/"
   - title: "Videos: simulation"
     children:
     - title: "Test SITL: hand solution"

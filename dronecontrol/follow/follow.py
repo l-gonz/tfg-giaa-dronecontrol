@@ -16,9 +16,8 @@ from dronecontrol.follow.controller import Controller
 
 mp_pose = mp.solutions.pose
 
-YAW_POINT = 0.5 # Target mid-point of horizontal axis
-FWD_POINT_SIM = 0.36 # Target detected person height to 36% of screen height, appropriate for SIMULATOR TESTS
-FWD_POINT_CAM = 0.5 # 50% of screen height for real flight camera
+YAW_POINT = 0.5 # Target mid-point of screen
+FWD_POINT = 0.5 # Target 50% of screen height 
 
 
 class Follow():
@@ -39,14 +38,18 @@ class Follow():
         self.last_run_time = time.time()
         self.image_events = []
         use_simulator = simulator_ip is not None
+        
+        self._pilot_time_list = []
+        self._pilot_pos_list = []
+        self._pilot_vel_list = []
 
         # Connect with sim when no sim IP provided
         if use_simulator and not simulator_ip and not serial:
-            simulator = utils.get_wsl_host_ip()
+            simulator_ip = utils.get_wsl_host_ip()
         self.source = self.__get_source(simulator_ip, use_simulator)
 
         self.pilot = System(ip, port, serial is not None, serial)
-        self.controller = Controller(YAW_POINT, FWD_POINT_SIM if use_simulator else FWD_POINT_CAM, not use_simulator)
+        self.controller = Controller(YAW_POINT, FWD_POINT, use_simulator)
         self.is_follow_on = True
         self.is_keyboard_control_on = True
         self.measures = {}
@@ -65,17 +68,17 @@ class Follow():
         with mp_pose.Pose() as pose:
             self.pose = pose
             while True:
-                await measure(self.__process_image, pose)
-                await measure(self.__offboard_control, self.p1, self.p2)
-                await measure(self.__on_new_image)
+                await self.measure(self.__process_image, pose)
+                await self.measure(self.__offboard_control, self.p1, self.p2)
+                await self.measure(self.__on_new_image)
 
                 if self.is_keyboard_control_on:
                     try:
-                        await measure(self.__manual_input_control, pose)
+                        await self.measure(self.__manual_input_control, pose)
                     except KeyboardInterrupt:
                         break
                 
-                await measure(asyncio.sleep, 0.001)
+                await self.measure(asyncio.sleep, 0.001)
 
 
     def subscribe_to_image(self, func):
@@ -89,7 +92,7 @@ class Follow():
         func_name = func.__name__
         if func_name not in self.measures:
             self.measures[func_name] = []
-        await utils.measure(func, self.measures[func_name], is_async, *args)
+        return await utils.measure(func, self.measures[func_name], is_async, *args)
 
 
     def log_measures(self):
@@ -101,6 +104,14 @@ class Follow():
             if self.measures[key]:
                 self.log.info(f"{i} - {key}: mean {np.mean(self.measures[key])} var {np.var(self.measures[key])}")
             self.measures[key] = []
+
+
+    def get_pilot_telemetry(self):
+        telemetry = [self._pilot_time_list, self._pilot_pos_list, self._pilot_vel_list]
+        self._pilot_time_list = []
+        self._pilot_pos_list = []
+        self._pilot_vel_list = []
+        return telemetry
 
 
     def close(self):
@@ -115,9 +126,9 @@ class Follow():
 
     async def __process_image(self, pose):
         """Run pose detection algorithm on a new frame and store bounding box."""
-        image = await measure(self.source.get_frame, is_async=False)
+        image = await self.measure(self.source.get_frame, is_async=False)
         try:
-            self.results = await measure(pose.process, image, is_async=False)
+            self.results = await self.measure(pose.process, image, is_async=False)
         except Exception as e:
             self.log.error("Image error: " + str(e))
             self.results.pose_landmarks = None
@@ -126,11 +137,11 @@ class Follow():
             except:
                 pose = mp_pose.Pose()
 
-        self.p1, self.p2 = await measure(image_processing.detect, self.results, image, is_async=False)
-        self.__show_image()
+        self.p1, self.p2 = await self.measure(image_processing.detect, self.results, image, is_async=False)
+        self.__show_image(image)
 
 
-    def __show_image(self):
+    def __show_image(self, image):
         """Annotate image and show in a window."""
         inputs = Controller.get_input(self.p1, self.p2)
         utils.write_text_to_image(image, f"Yaw input: {inputs[0]:.3} - fwd input: {inputs[1]:.3}")
@@ -154,6 +165,17 @@ class Follow():
         if await self.pilot.is_offboard() and self.is_follow_on:
             yaw, fwd = self.controller.control(p1, p2)
             await self.__fly(yaw, fwd)
+            
+            if yaw == 0 and fwd == 0: 
+                return
+        
+            comp = self.controller.yaw_pid.components
+            self.log.warn(f"Kp: {comp[0]:.3f} Ki: {comp[1]}, Kd: {comp[2]}")
+
+            # Save actual position and velocity
+            self._pilot_time_list.append(time.time())
+            self._pilot_pos_list.append(await self.pilot.get_position_ned_yaw())
+            self._pilot_vel_list.append([await self.pilot.get_ground_velocity_mag(), await self.pilot.get_yaw_velocity()])
 
 
     async def __manual_input_control(self, pose):
@@ -186,6 +208,7 @@ class Follow():
                 await event(self.p1, self.p2)
             except Exception as e:
                 self.log.error(e)
+                traceback.print_exc()
 
 
 def main(ip="", simulator=None, serial=None, port=None):

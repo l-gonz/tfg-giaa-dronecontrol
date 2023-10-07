@@ -17,17 +17,18 @@ class Controller:
     ZEROES = np.asarray([0, 0])
     ONES = np.asarray([1, 1])
 
-    DEFAULT_YAW_TUNINGS = (-50, -0.5, 0)
-    DEFAULT_YAW_TUNINGS_INV = (50, 0.5, 0)
-    DEFAULT_FWD_TUNINGS = (3, 0, 0)
+    # Obtained empirically
+    DEFAULT_YAW_TUNINGS = (100, 40, 0)
+    DEFAULT_FWD_TUNINGS = (4, 1, 0)
 
     def __init__(self, target_x, target_height, invert_yaw=False) -> None:
         self.log = utils.make_stdout_logger(__name__)
         
         self.yaw_pid = PID()
-        self.yaw_pid.tunings = self.DEFAULT_YAW_TUNINGS if not invert_yaw else self.DEFAULT_YAW_TUNINGS_INV
+        self.yaw_pid.tunings = self.DEFAULT_YAW_TUNINGS
         self.yaw_pid.setpoint = target_x
         self.yaw_pid.output_limits = (-self.MAX_YAW_VEL, self.MAX_YAW_VEL)
+        self.invert_yaw = invert_yaw
 
         self.fwd_pid = PID()
         self.fwd_pid.tunings = self.DEFAULT_FWD_TUNINGS
@@ -43,6 +44,8 @@ class Controller:
 
         yaw_input = self.__get_yaw_point_from_box(p1, p2)
         yaw_vel = self.yaw_pid(yaw_input)
+        if self.invert_yaw:
+            yaw_vel = yaw_vel * -1
 
         fwd_input = self.__get_fwd_point_from_box(p1, p2)
         fwd_vel = self.fwd_pid(fwd_input)

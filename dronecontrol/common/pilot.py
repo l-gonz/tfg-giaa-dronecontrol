@@ -1,6 +1,6 @@
 import asyncio
 import typing
-import time
+import math
 import mavsdk
 from mavsdk.action import ActionError
 from mavsdk.telemetry import LandedState, FlightMode
@@ -271,8 +271,18 @@ class System():
         return await System.get_async_generated(self.mav.telemetry.attitude_euler())
 
 
-    async def get_velocity(self):
-        return await System.get_async_generated(self.mav.telemetry.attitude_angular_velocity_body())
+    async def get_yaw_velocity(self):
+        yaw_vel = (await System.get_async_generated(self.mav.telemetry.attitude_angular_velocity_body()))
+        return yaw_vel.yaw_rad_s * 180 / math.pi
+    
+
+    async def get_ground_velocity(self):
+        return await System.get_async_generated(self.mav.telemetry.velocity_ned())
+    
+
+    async def get_ground_velocity_mag(self):
+        vel_ned =  await self.get_ground_velocity()
+        return (vel_ned.north_m_s ** 2 + vel_ned.east_m_s ** 2) ** 0.5
 
 
     async def get_landed_state(self):

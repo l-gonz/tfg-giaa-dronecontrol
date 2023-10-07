@@ -90,7 +90,7 @@ async def log_system_info(log: logging.Logger, pilot: pilot.System, tracking_inf
     flight_mode = str(await pilot.get_flight_mode())
     position = str(await pilot.get_position())
     attitude = str(await pilot.get_attitude())
-    velocity = str(await pilot.get_velocity())
+    velocity = str(await pilot.get_yaw_velocity())
 
     log.info('%s,%s,%s,%s,%s,%s', landed_state, flight_mode, position, attitude, velocity, tracking_info)
 
@@ -130,7 +130,7 @@ def get_wsl_host_ip():
     return ip
 
 
-def plot(x, y, subplots=None, block=True, title="TEST PID", xlabel="time (s)", ylabel="PID (PV)", legend=None):
+def plot(x, y, subplots=None, block=True, title="TEST PID", xlabel="time [s]", ylabel="PID (PV)", legend=None):
     """Helper function to plot data with different styles."""
     if len(x) == 0:
         return

@@ -1,11 +1,12 @@
 import asyncio
 import cv2
 import traceback
+import math
 from mavsdk.offboard import PositionNedYaw
 from mavsdk.action import ActionError
 from mediapipe.python.solution_base import SolutionBase
 
-from dronecontrol.common import utils
+from dronecontrol.common import utils, input
 from dronecontrol.follow.controller import Controller
 from dronecontrol.follow.follow import Follow
 from dronecontrol.common.pilot import System
@@ -18,14 +19,16 @@ class TunePIDController:
 
     def __init__(self, tune_yaw=True, manual=False, sample_time=20, kp_values=[], ki_values=[], kd_values=[]):
         self.log = utils.make_stdout_logger(__name__)
-        self.follow = Follow(port=14550, simulator="") 
+        self.input_handler = input.InputHandler()
+        self.follow = Follow(port=14550, simulator_ip="")
 
         self.follow.is_follow_on = True
         self.follow.is_keyboard_control_on = False
         self.follow.pilot.offboard_poll_time = -1
-        self.first_time = True
+        self.first_time = False
 
         self.sample_time = sample_time
+        self.compare_velocities = True
         self.manual = manual or (kp_values == [0] and ki_values == [0] and kd_values == [0])
             
         self.save_parameter_values([kp_values, ki_values, kd_values])
@@ -39,14 +42,22 @@ class TunePIDController:
 
 
     async def run(self):
-        await self.follow.pilot.connect()
+        try:
+            await self.follow.pilot.connect()
+        except Exception as e:
+            self.log.error(e)
+            return
+
         await asyncio.sleep(5)
         await self.follow.pilot.takeoff()
         await asyncio.sleep(2)
         self.follow.subscribe_to_image(self.on_new_image)
 
-        self.feedback_data = []
-        self.speed_data = []
+        self.input_data = []
+        self.output_data = []
+        self.pilot_pos_data = []
+        self.pilot_vel_data = []
+        self.pilot_time = []
         self.time = []
 
         await self.follow.pilot.start_offboard()
@@ -77,9 +88,13 @@ class TunePIDController:
     async def go_to_next_value(self, time_data):
         # Save last run
         if not self.first_time:
-            data = self.follow.controller.get_yaw_data() if self.tune_yaw else self.follow.controller.get_fwd_data()
-            self.feedback_data.append(data[1])
-            self.speed_data.append(data[2])
+            pid_data = self.follow.controller.get_yaw_data() if self.tune_yaw else self.follow.controller.get_fwd_data()
+            self.input_data.append(pid_data[1])
+            self.output_data.append(pid_data[2])
+            pilot_data = self.follow.get_pilot_telemetry()
+            self.pilot_time.append(pilot_data[0])
+            self.pilot_pos_data.append(pilot_data[1])
+            self.pilot_vel_data.append(pilot_data[2])
             self.time.append(time_data)
 
         # Reset position
@@ -129,7 +144,7 @@ class TunePIDController:
 
 
     async def keyboard_control(self, key):
-        key_action = utils.keyboard_control(key)
+        key_action = self.input_handler.handle(key)
         if key_action:
             if System.__name__ in key_action.__qualname__:
                 try:
@@ -186,13 +201,45 @@ class TunePIDController:
             )
             self.log.info(f"Values left {len(self.target_values)}/{len(self.legend)}")
         else:
-            utils.plot(self.time + [[0, self.sample_time]], self.feedback_data + [[pid.setpoint, pid.setpoint]], 
-                       legend=self.legend + ["Target"], block=False,
-                       title="Yaw controller" if self.tune_yaw else "Forward controller", 
-                       ylabel="Horizontal position" if self.tune_yaw else "Height")
-            utils.plot(self.time, self.speed_data, legend=self.legend, block=True,
-                       title="Yaw controller" if self.tune_yaw else "Forward controller", ylabel="Velocity")
+            self.plot_results(pid)
             raise KeyboardInterrupt
+        
+
+    def plot_results(self, pid):
+        input_norm = [[pid.setpoint - i for i in sample] for sample in self.input_data]
+        utils.plot(self.time, input_norm, legend=self.legend[3:], block=False,
+                   title=("Yaw" if self.tune_yaw else "Forward") + " controller input",
+                   ylabel="Computed error [-]")
+        utils.plot(self.time, self.output_data, legend=self.legend[3:], block=False,
+                   title=("Yaw" if self.tune_yaw else "Forward") + " controller output", 
+                   ylabel="Output velocity" + " [deg/s]" if self.tune_yaw else " [m/s]")
+
+        if self.tune_yaw:
+            target_heading = math.atan(100 / 420) * 180 / math.pi + self.START_POS.yaw_deg
+            pilot_time = [[i - sample[0] for i in sample] for sample in self.pilot_time]
+            pilot_pos = [[i.yaw_deg for i in sample] for sample in self.pilot_pos_data]
+            calculated_limits = [sum(sample[-(len(sample)//4):])/(len(sample)//4) for sample in pilot_pos]
+            self.log.warn(f"Limits: {calculated_limits}")
+            utils.plot(pilot_time + [[0, self.sample_time]], 
+                       pilot_pos + [[target_heading, target_heading]],
+                       block=False, title="Measured yaw position", legend=self.legend + ["Target"],
+                       ylabel="Heading [deg]")
+            utils.plot(pilot_time, [[i[1] for i in sample] for sample in self.pilot_vel_data], block=True,
+                       title="Measured yaw speed" if self.tune_yaw else "Measured ground speed", legend=self.legend,
+                       ylabel="Velocity [deg/s]")
+        else:
+            target_distance = -100 / 100
+            pilot_time = [[i - sample[0] for i in sample] for sample in self.pilot_time]
+            pilot_pos = [[i.north_m for i in sample] for sample in self.pilot_pos_data]
+            calculated_limits = [sum(sample[-(len(sample)//4):])/(len(sample)//4) for sample in pilot_pos]
+            self.log.warn(f"Limits: {calculated_limits}")
+            utils.plot(pilot_time[3:] + [[0, self.sample_time]], 
+                       pilot_pos[3:] + [[target_distance, target_distance]],
+                       block=False, title="Measured forward position", legend=self.legend[3:] + ["Target"],
+                       ylabel="Forward movement [m]")
+            utils.plot(pilot_time[3:], [[i[0] for i in sample] for sample in self.pilot_vel_data][3:], block=True,
+                       title="Measured yaw speed" if self.tune_yaw else "Measured ground speed", legend=self.legend[3:],
+                       ylabel="Velocity" + " [rad/s]" if self.tune_yaw else " [m/s]")
 
 
     def close(self):

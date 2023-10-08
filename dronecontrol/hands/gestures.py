@@ -33,16 +33,25 @@ class Finger(IntEnum):
 
 VECTOR_UP = np.array([0, -1, 0])
 VECTOR_RIGHT = np.array([1, 0, 0])
+
+# Angle thresholds for detecting the direction a thumb is pointing towards
+# depending of if it's the right or the left hand
 THUMB_THRESHOLDS = {
     "Right": (85, 120),
     "Left": (65, 100)
 }
 
+ZERO_ANGLE = 0
+STRAIGHT_ANGLE = 180
+
+EXTENDED_FINGER_THRESHOLD = 50
+BACKHAND_THRESHOLD = 40
+POINT_RIGHT_THRESHOLD = 60
+POINT_LEFT_THRESHOLD = 120
+
 
 class Detector():
     """Detect hand gestures from joint landmarks."""
-    EXTENDED_FINGER_THRESHOLD = 50
-    BACKHAND_THRESHOLD = 40
 
     def __init__(self):
         self.log = utils.make_stdout_logger(__name__)
@@ -87,7 +96,7 @@ class Detector():
             base = finger[Joint.FIRST] - self.wrist
             tip = finger[Joint.TIP] - finger[Joint.FIRST]
             angle = Detector.__angle(base, tip)
-            is_open.append(angle < self.EXTENDED_FINGER_THRESHOLD)
+            is_open.append(angle < EXTENDED_FINGER_THRESHOLD)
         return is_open
 
     
@@ -105,11 +114,11 @@ class Detector():
         index_vector = self.__get_finger_vector(Finger.INDEX)
         angle = Detector.__angle(index_vector, VECTOR_RIGHT)
 
-        if angle > 0 and angle < 60:
+        if angle > ZERO_ANGLE and angle < POINT_RIGHT_THRESHOLD:
             return Gesture.POINT_RIGHT
-        elif angle > 60 and angle < 120:
+        elif angle > POINT_RIGHT_THRESHOLD and angle < POINT_LEFT_THRESHOLD:
             return Gesture.POINT_UP
-        elif angle > 120 and angle < 180:
+        elif angle > POINT_LEFT_THRESHOLD and angle < STRAIGHT_ANGLE:
             return Gesture.POINT_LEFT
         else:
             self.log.error("Could not detect point gesture")
@@ -119,9 +128,9 @@ class Detector():
         thumb_vector = self.__get_finger_vector(Finger.THUMB)
         angle = Detector.__angle(thumb_vector, VECTOR_RIGHT)
         
-        if angle > 0 and angle < THUMB_THRESHOLDS[self.label][0]:
+        if angle > ZERO_ANGLE and angle < THUMB_THRESHOLDS[self.label][0]:
             return Gesture.THUMB_RIGHT
-        elif angle > THUMB_THRESHOLDS[self.label][1] and angle < 180:
+        elif angle > THUMB_THRESHOLDS[self.label][1] and angle < STRAIGHT_ANGLE:
             return Gesture.THUMB_LEFT
 
 
@@ -129,9 +138,9 @@ class Detector():
         vectors = [self.__get_finger_vector(f) for f in Finger]
         thumb = Detector.__angle(vectors.pop(0), VECTOR_UP)
         others = [Detector.__angle(v, VECTOR_RIGHT) for v in vectors]
-        return (thumb < Detector.BACKHAND_THRESHOLD and 
-            all((x < Detector.BACKHAND_THRESHOLD or 
-                180 - x < Detector.BACKHAND_THRESHOLD 
+        return (thumb < BACKHAND_THRESHOLD and 
+            all((x < BACKHAND_THRESHOLD or 
+                STRAIGHT_ANGLE - x < BACKHAND_THRESHOLD 
                 for x in others)))
 
     

@@ -6,6 +6,7 @@ import numpy
 import time
 import matplotlib.pyplot as plt
 from datetime import datetime
+from enum import Enum
 from mediapipe.python.solution_base import SolutionBase
 
 from dronecontrol.tools import tools
@@ -28,6 +29,11 @@ class Color():
     PINK = (255, 0, 255)
     BLUE = (255, 0, 0)
     RED = (0, 0, 255)
+
+class ImageLocation(Enum):
+    TOP_LEFT = 0
+    BOTTOM_LEFT = 1
+    BOTTOM_LEFT_LINE_TWO = 2
 
 
 def make_stdout_logger(name: str, level=logging.INFO) -> logging.Logger:
@@ -61,6 +67,7 @@ def make_file_logger(name: str, level=logging.INFO, for_system_info=True) -> log
 
 
 def close_file_logger(logger: logging.Logger):
+    """Close the handlers on a file logger."""
     if logger is None:
         return
 
@@ -71,6 +78,7 @@ def close_file_logger(logger: logging.Logger):
 
 
 async def log_system_info(log: logging.Logger, pilot: pilot.System, tracking_info: str):
+    """Log useful information about a pilot system to a dedicated logger."""
     if log is None:
         return
 
@@ -82,30 +90,34 @@ async def log_system_info(log: logging.Logger, pilot: pilot.System, tracking_inf
     flight_mode = str(await pilot.get_flight_mode())
     position = str(await pilot.get_position())
     attitude = str(await pilot.get_attitude())
-    velocity = str(await pilot.get_velocity())
+    velocity = str(await pilot.get_yaw_velocity())
 
     log.info('%s,%s,%s,%s,%s,%s', landed_state, flight_mode, position, attitude, velocity, tracking_info)
 
 
-def write_text_to_image(image, text, channel=1):
+def write_text_to_image(image, text, location=ImageLocation.BOTTOM_LEFT):
     """Annotate an image with the given text.
         
-    Several channels available for positioning the text."""
-    cv2.putText(image, str(text), __get_text_pos(image, channel),
+    Several locations available for positioning the text."""
+    cv2.putText(image, str(text), __get_text_pos(image, location),
         FONT, FONT_SCALE, Color.BLUE, FONT_SCALE)
 
 
-def __get_text_pos(image, channel) -> typing.Tuple[int,int]:
-    """Map channel number to pixel position."""
-    if channel == 0:
+def __get_text_pos(image, location: ImageLocation) -> typing.Tuple[int,int]:
+    """Map image location enum to pixel position."""
+    if location == ImageLocation.TOP_LEFT:
         return (10, 30)
-    if channel == 1:
+    if location == ImageLocation.BOTTOM_LEFT:
         return (10, image.shape[0] - 10)
-    if channel == 2:
+    if location == ImageLocation.BOTTOM_LEFT_LINE_TWO:
         return (10, image.shape[0] - 30)
 
 
 def get_wsl_host_ip():
+    """
+    In a Linux system, returns the IP of the host Windows 
+    computer on the internal virtual network.
+    """
     ip = ""
     if not os.path.exists("/etc/resolv.conf"):
         return ip
@@ -118,92 +130,48 @@ def get_wsl_host_ip():
     return ip
 
 
-def keyboard_control(key: int):
-    if key < 0:
-        return None
+def plot(x, y, subplots=None, block=True, title="TEST PID", xlabel="time [s]", ylabel="PID (PV)", legend=None):
+    """Helper function to plot data with different styles."""
+    if len(x) == 0:
+        return
+    
+    x = numpy.array(x, dtype=object)
+    y = numpy.array(y, dtype=object)
+    plt.figure()
+    plt.xlabel(xlabel)
+    plt.grid(True)
+    plt.title(title)
 
-    log = make_stdout_logger(__name__)
-
-    log.info(f"Pressed [{chr(key)}]")
-    if key == ord('z'): # Quit
-        raise KeyboardInterrupt
-    elif key == ord('k'): # Kill switch
-        return pilot.System.kill_engines
-    elif key == ord('h'): # Return home
-        return pilot.System.return_home
-    elif key == ord('0'): # Stop
-        return pilot.System.set_velocity
-    elif key == ord('t'): # Take-off
-        return pilot.System.takeoff
-    elif key == ord('l'): # Land
-        return pilot.System.land
-    elif key == ord('o'): # Toggle offboard
-        return pilot.System.toggle_offboard
-    elif key == ord('w'): # Forward
-        return pilot.System.move_fwd_positive
-    elif key == ord('s'): # Backward
-        return pilot.System.move_fwd_negative
-    elif key == ord('d'): # Right
-        return pilot.System.move_right
-    elif key == ord('a'): # Left
-        return pilot.System.move_left
-    elif key == ord('q'): # Yaw left
-        return pilot.System.move_yaw_left
-    elif key == ord('e'): # Yaw right
-        return pilot.System.move_yaw_right
-    elif key == ord('1'): # Up
-        return pilot.System.move_up
-    elif key == ord('3'): # Down
-        return pilot.System.move_down
-    elif key == ord(' '): # Take picture / start video
-        return tools.VideoCamera.trigger
-    elif key == ord('<'): # Picture <> video
-        return tools.VideoCamera.change_mode
-    elif key == ord('r'): # Reset image processing
-        return SolutionBase.process
-
+    if subplots:
+        count = 0
+        for i, subplot in enumerate(subplots):
+            plt.subplot(len(subplots), 1, i+1)
+            plt.plot(x[:], numpy.transpose(y[count:count+subplot]))
+            plt.grid(True)
+            plt.ylabel(ylabel[i])
+            count += subplot
     else:
-        log.warning(f"Key {chr(key)}:{key} is not bound to any action.")
-
-
-def plot(x, y, subplots=None, block=True, title="TEST PID", xlabel="time (s)", ylabel="PID (PV)", legend=None):
-        if len(x) == 0:
-            return
-        
-        x = numpy.array(x, dtype=object)
-        y = numpy.array(y, dtype=object)
-        plt.figure()
-        plt.xlabel(xlabel)
-        plt.grid(True)
-        plt.title(title)
-
-        if subplots:
-            count = 0
-            for i, subplot in enumerate(subplots):
-                plt.subplot(len(subplots), 1, i+1)
-                plt.plot(x[:], numpy.transpose(y[count:count+subplot]))
-                plt.grid(True)
-                plt.ylabel(ylabel[i])
-                count += subplot
+        if x.shape[0] != y.shape[0]:
+            for y_data in y:
+                plt.plot(x, y_data)
+        elif x.shape == y.shape:
+            for i in range(x.shape[0]):
+                plt.plot(x[i], y[i])
         else:
-            if x.shape[0] != y.shape[0]:
-                for y_data in y:
-                    plt.plot(x, y_data)
-            elif x.shape == y.shape:
-                for i in range(x.shape[0]):
-                    plt.plot(x[i], y[i])
-            else:
-                raise Exception("Unmatched data")
-            plt.ylabel(ylabel)
+            raise Exception("Unmatched data")
+        plt.ylabel(ylabel)
 
-        if legend:
-            plt.legend(legend)
-        plt.show(block=block)
+    if legend:
+        plt.legend(legend)
+    plt.show(block=block)
 
 
-async def measure(func, time_list, async_call, *args):
+async def measure(func, time_list: list, is_async: bool, *args):
+    """Execute a function and measure the time that it takes to run.
+    
+    Adds the time to the end of the list of values provided in time_list."""
     start_time = time.perf_counter()
-    if async_call:
+    if is_async:
         result = await func(*args)
     else:
         result = func(*args)
@@ -213,7 +181,7 @@ async def measure(func, time_list, async_call, *args):
 
 
 def write_image(img, filepath: str=None):
-    """Save current captured image to file."""
+    """Save image to file."""
     if not filepath:
         if not os.path.exists(IMAGE_FOLDER):
             os.makedirs(IMAGE_FOLDER)
@@ -222,6 +190,7 @@ def write_image(img, filepath: str=None):
 
 
 def write_video(size):
+    """Save video to file."""
     if not os.path.exists(IMAGE_FOLDER):
         os.makedirs(IMAGE_FOLDER)
     filepath = f"{IMAGE_FOLDER}/{get_formatted_date()}.avi"
@@ -229,4 +198,5 @@ def write_video(size):
 
 
 def get_formatted_date():
+    """Get current date as a formatted string for a file name."""
     return datetime.now().strftime('%Y%m%d-%H%M%S')

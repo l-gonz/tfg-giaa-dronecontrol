@@ -1,26 +1,15 @@
-Tested on Ubuntu 20.04
+Tested on Ubuntu 20.04 inside WSL
 
 # Installation
 
-1. Clone repository
-2. Setup dependencies 
+Execute the installation file after cloning the repository:
 ```shell
-bash ./setup.sh
+bash ./install.sh
 ```
-3. Create virtual environment
-```shell
-python3 -m venv venv
-```
-4. Activate environment 
-```shell
-source venv/bin/activate
-```
-5. Install python packages 
-```shell
-pip install -r requirements.txt
-```
+
+The script installs the PX4 dependencies, creates a virtual environment for the project and installs the dronevisioncontrol package in edit mode.
 
 # Run in simulator
 
-1. Start simulator: `bash ./simulator.sh`
-2. Run app: `python app.py`
+1. Start simulator: `./simulator.sh`
+2. Run app: `python -m dronevisioncontrol`

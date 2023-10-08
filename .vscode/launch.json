@@ -20,8 +20,8 @@
             "justMyCode": true,
             "args": [
                 "hand",
-                "-f",
-                "img/hand-short.mp4"
+                "-p",
+                "14550"
             ]
         },
         {
@@ -70,7 +70,15 @@
             "justMyCode": true,
             "args": [
                 "tools",
-                "tune"
+                "tune",
+                "-t",
+                "60",
+                "-p",
+                "30",
+                "-i",
+                "0",
+                "-d",
+                "0 0 0 0 0"
             ]
         }
     ]

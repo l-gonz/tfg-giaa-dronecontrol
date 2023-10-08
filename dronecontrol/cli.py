@@ -16,18 +16,16 @@ def main():
 @click.option("-p", "--port", type=int, help="port for UDP connections")
 @click.option("-s", "--serial", is_flag=False, flag_value="", help="connect to drone system through serial, default device is /dev/ttyUSB0")
 @click.option("-f", "--file", type=click.Path(exists=True, readable=True), help="file to use as source instead of the camera")
-@click.option("-l", "--log", is_flag=True, help="log important info and save video")
-def hand(ip, port, serial, file, log):
-    hands_entry.main(ip, port, serial, file, log)
+def hand(ip, port, serial, file):
+    hands_entry.main(ip, port, serial, file)
 
 @main.command()
 @click.option("--ip", default="", help="pilot IP address, ignored if serial is provided")
 @click.option("-p", "--port", default=None, help="pilot UDP port, ignored if serial is provided, default is 14540")
 @click.option("--sim", "simulator", is_flag=False, flag_value="", help="run with AirSim as flight engine, optionally provide ip the sim listens to")
-@click.option("-l", "--log", is_flag=True, help="log important info and save video")
 @click.option("-s", "--serial", is_flag=False, flag_value="", help="use serial to connect to PX4 (HITL), optionally provide the address of the serial port")
-def follow(ip, port, simulator, log, serial):
-    follow_entry.main(ip, simulator, serial, log, port)
+def follow(ip, port, simulator, serial):
+    follow_entry.main(ip, simulator, serial, port)
 
 @main.group()
 def tools():

@@ -6,7 +6,7 @@ import asyncio
 from enum import Enum
 import mediapipe as mp
 
-from dronecontrol.common import utils, pilot
+from dronecontrol.common import utils, pilot, input
 from dronecontrol.common.video_source import CameraSource, SimulatorSource, FileSource
 from dronecontrol.follow.controller import Controller
 from dronecontrol.hands.graphics import HandGui
@@ -31,6 +31,7 @@ class VideoCamera:
                  image_detection, hardware_address=None, simulator_ip=None,
                  file=None):
         self.log = utils.make_stdout_logger(__name__)
+        self.input_handler = input.InputHandler()
         self.pilot = None
         if use_simulator or use_hardware:
             port = 14550 if use_simulator else None
@@ -56,7 +57,13 @@ class VideoCamera:
         
 
     async def run(self):
-        pilot_task = asyncio.create_task(self.pilot.start()) if self.pilot else None
+        if self.pilot and not self.pilot.is_ready:
+            try:
+                await self.pilot.connect()
+            except asyncio.exceptions.TimeoutError:
+                self.log.error("Connection time-out")
+                return
+        pilot_task = asyncio.create_task(self.pilot.start_queue()) if self.pilot else None
         
         while True:
             if self.hand_detection:
@@ -72,9 +79,11 @@ class VideoCamera:
                     self.results = self.pose_detection.process(self.img)
                     p1, p2 = detect(self.results, raw_img)
                     input = Controller.get_input(p1, p2) if self.results.pose_landmarks else (0, 0)
-                    utils.write_text_to_image(raw_img, f"Yaw input: {input[0]:.3f}, fwd input {input[1]:.3f}", 2)
+                    utils.write_text_to_image(raw_img, f"Yaw input: {input[0]:.3f}, fwd input {input[1]:.3f}", 
+                                              utils.ImageLocation.BOTTOM_LEFT_LINE_TWO)
 
-            utils.write_text_to_image(raw_img, f"Mode {self.mode.name}: {'' if self.is_recording else 'not '} recording", 0)
+            utils.write_text_to_image(raw_img, f"Mode {self.mode.name}: {'' if self.is_recording else 'not '} recording",
+                                      utils.ImageLocation.TOP_LEFT)
             utils.write_text_to_image(raw_img, f"FPS: {1.0 / (time.time() - self.last_run_time):.3f}")
             self.last_run_time = time.time()
             cv2.imshow("Dronecontrol: test camera", raw_img)
@@ -135,7 +144,7 @@ class VideoCamera:
 
 
     def __handle_key_input(self):
-        key_action = utils.keyboard_control(cv2.waitKey(self.source.get_delay()))
+        key_action = self.input_handler.handle(cv2.waitKey(self.source.get_delay()))
         if key_action is None:
             pass
         elif self.pilot and pilot.System.__name__ in key_action.__qualname__:

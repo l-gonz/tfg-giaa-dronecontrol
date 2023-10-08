@@ -5,6 +5,10 @@ import numpy as np
 import time
 
 class Controller:
+    """Wrapper class for the simple_pid library.
+    
+    Implements two PID controllers for obtaining yaw and forward 
+    velocity outputs from a detected bounding box."""
 
     MAX_FWD_VEL = 0.4
     MAX_YAW_VEL = 5
@@ -13,17 +17,18 @@ class Controller:
     ZEROES = np.asarray([0, 0])
     ONES = np.asarray([1, 1])
 
-    DEFAULT_YAW_TUNINGS = (-50, -0.5, 0)
-    DEFAULT_YAW_TUNINGS_INV = (50, 0.5, 0)
-    DEFAULT_FWD_TUNINGS = (3, 0, 0)
+    # Obtained empirically
+    DEFAULT_YAW_TUNINGS = (100, 40, 0)
+    DEFAULT_FWD_TUNINGS = (4, 1, 0)
 
     def __init__(self, target_x, target_height, invert_yaw=False) -> None:
         self.log = utils.make_stdout_logger(__name__)
         
         self.yaw_pid = PID()
-        self.yaw_pid.tunings = self.DEFAULT_YAW_TUNINGS if not invert_yaw else self.DEFAULT_YAW_TUNINGS_INV
+        self.yaw_pid.tunings = self.DEFAULT_YAW_TUNINGS
         self.yaw_pid.setpoint = target_x
         self.yaw_pid.output_limits = (-self.MAX_YAW_VEL, self.MAX_YAW_VEL)
+        self.invert_yaw = invert_yaw
 
         self.fwd_pid = PID()
         self.fwd_pid.tunings = self.DEFAULT_FWD_TUNINGS
@@ -39,6 +44,8 @@ class Controller:
 
         yaw_input = self.__get_yaw_point_from_box(p1, p2)
         yaw_vel = self.yaw_pid(yaw_input)
+        if self.invert_yaw:
+            yaw_vel = yaw_vel * -1
 
         fwd_input = self.__get_fwd_point_from_box(p1, p2)
         fwd_vel = self.fwd_pid(fwd_input)
@@ -53,12 +60,6 @@ class Controller:
         self._fwd_output_list.append(fwd_vel)
         self._fwd_output_detail_list.append(self.fwd_pid.components)
         self._time_list.append(time.time() - self._start_time)
-
-        # Stop control when close enough
-        # if abs(1 - yaw_input / self.yaw_pid.SetPoint) < self.ALLOWED_ERROR:
-        #     yaw_vel = 0
-        # if abs(1 - fwd_input / self.fwd_pid.SetPoint) < self.ALLOWED_ERROR:
-        #     fwd_vel = 0
 
         self.last_yaw_vel = (float)(yaw_vel)
         self.last_fwd_vel = (float)(fwd_vel)
@@ -122,7 +123,6 @@ class Controller:
     def __get_fwd_point_from_box(p1, p2):
         return (float)(p2[1] - p1[1])
 
-    
     @staticmethod
     def get_input(p1, p2):
         return (Controller.__get_yaw_point_from_box(p1, p2), Controller.__get_fwd_point_from_box(p1, p2))

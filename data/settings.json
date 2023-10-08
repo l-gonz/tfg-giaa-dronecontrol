@@ -1,0 +1,40 @@
+{
+    "SettingsVersion": 1.2,
+    "SimMode": "Multirotor",
+    "ClockType": "SteppableClock",
+    "Vehicles": {
+        "PX4": {
+            "VehicleType": "PX4Multirotor",
+            "LockStep": true,
+            "UseSerial": false, //”<true: HITL, false: SITL>”
+            "UseTcp": true,
+            "TcpPort": 4560,
+            "ControlIp": "remote",
+            "ControlPortLocal": 14550,
+            "ControlPortRemote": 14570,
+            "LocalHostIp": "<Windows-IP>",
+            "Sensors":{
+                "Barometer":{
+                    "SensorType": 1,
+                    "Enabled": true
+                }
+            },
+            "Parameters": {
+                "NAV_RCL_ACT": 1,
+                "NAV_DLL_ACT": 0,
+                "COM_RCL_EXCEPT": 7,
+                "LPE_LAT": 47.641468,
+                "LPE_LON": -122.140165
+            }
+        }
+    },
+    "CameraDefaults": {
+        "CaptureSettings": [
+            {
+                "ImageType": 0,
+                "Width": 640,
+                "Height": 400
+            }
+        ]
+    }
+}

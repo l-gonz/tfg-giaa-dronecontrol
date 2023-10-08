@@ -24,7 +24,7 @@ CORE_LANDMARKS = [
 
 
 def detect(results, image):
-    """Process detection results into a box bounding the detected person."""
+    """Process detection results into a box matching the bounds of the detected person."""
     if not results.pose_landmarks:
         return CAMERA_BOX[0], CAMERA_BOX[1]
 
@@ -44,9 +44,8 @@ def detect(results, image):
         return p1, p2
 
 
-
 def get_bounding_box(landmarks):
-    """Returns coordinates of a box bounding the detected person."""
+    """Returns coordinates of a box matching the bounds of the detected person."""
     p1_x = min(landmarks, key=lambda landmark: landmark.x).x
     p2_x = max(landmarks, key=lambda landmark: landmark.x).x
     p1_y = min(landmarks, key=lambda landmark: landmark.y).y
@@ -58,7 +57,7 @@ def get_bounding_box(landmarks):
 
 
 def is_standing_pose(results, p1, p2):
-    """Detects some wrongly detected artifacts as not a standing person."""
+    """Return whether the bounding box provided matches the pose of a standing person."""
     core_points = [results.pose_landmarks.landmark[i] for i in CORE_LANDMARKS]
     height = p2[1] - p1[1]
     width = p2[0] - p1[0]

@@ -1,0 +1,385 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>Test SITL: hand solution - Exploration of Vision-Based Control Solutions for PX4-Driven UAVs</title>
+<meta name="description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it  approachable for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="Exploration of Vision-Based Control Solutions for PX4-Driven UAVs">
+<meta property="og:title" content="Test SITL: hand solution">
+<meta property="og:url" content="http://localhost:4000/tfg-giaa-dronecontrol/videos/test-sitl-hand">
+
+
+  <meta property="og:description" content="The popular open-source platform PX4 aims to facilitate the programming of unmanned aerial vehicles and their integration with new sensors and actuators and make it  approachable for the common developer. This thesis aims to demonstrate how this platform can be used to develop solutions that integrate computer vision techniques and use their input to control the movement of an aerial vehicle, while employing easily-available and affordable hardware with basic specifications. For this purpose, a viable solution is presented that allows a drone to use an onboard camera to identify and keep track of a person in its field of view to follow their movement.">
+
+
+
+  <meta property="og:image" content="http://localhost:4000/tfg-giaa-dronecontrol/assets/images/video-hand-sitl.png">
+
+
+
+
+
+  <meta property="article:published_time" content="2023-03-12T14:07:10+01:00">
+
+
+
+
+
+
+<link rel="canonical" href="http://localhost:4000/tfg-giaa-dronecontrol/videos/test-sitl-hand">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "Laura González Fernández",
+      "url": "http://localhost:4000/tfg-giaa-dronecontrol/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/tfg-giaa-dronecontrol/feed.xml" type="application/atom+xml" rel="alternate" title="Exploration of Vision-Based Control Solutions for PX4-Driven UAVs Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/tfg-giaa-dronecontrol/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--single wide">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    <!--[if lt IE 9]>
+<div class="notice--danger align-center" style="margin: 0;">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience.</div>
+<![endif]-->
+
+    
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+        <a class="site-title" href="/tfg-giaa-dronecontrol/">
+          Exploration of Vision-Based Control Solutions for PX4-Driven UAVs
+          <span class="site-subtitle">Trabajo de Fin de Grado, Escuela de Ingeniería de Fuenlabrada, URJC</span>
+        </a>
+        <ul class="visible-links"><li class="masthead__menu-item">
+              <a href="/tfg-giaa-dronecontrol/videos/">Videos</a>
+            </li><li class="masthead__menu-item">
+              <a href="/tfg-giaa-dronecontrol/report/">Report</a>
+            </li><li class="masthead__menu-item">
+              <a href="/tfg-giaa-dronecontrol/about/">About</a>
+            </li><li class="masthead__menu-item">
+              <a href="https://github.com/l-gonz/tfg-giaa-dronecontrol">Repository</a>
+            </li></ul>
+        
+        <button class="search__toggle" type="button">
+          <span class="visually-hidden">Toggle search</span>
+          <i class="fas fa-search"></i>
+        </button>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+  
+
+
+
+
+
+
+
+<div class="page__hero--overlay"
+  style="background-color: #000; background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('/tfg-giaa-dronecontrol/assets/images/video-hand-sitl.png');"
+>
+  
+    <div class="wrapper">
+      <h1 id="page-title" class="page__title" itemprop="headline">
+        
+          Test SITL: hand solution
+
+        
+      </h1>
+      
+        <p class="page__lead">
+</p>
+      
+      
+
+
+      
+      
+    </div>
+  
+  
+</div>
+
+
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  
+  
+    
+      
+      
+      
+      
+    
+    
+      
+
+<nav class="nav__list">
+  
+  <input id="ac-toc" name="accordion-toc" type="checkbox" />
+  <label for="ac-toc">Toggle Menu</label>
+  <ul class="nav__items">
+    
+      <li>
+        
+          <span class="nav__sub-title">Content</span>
+        
+
+        
+        <ul>
+          
+            <li><a href="/tfg-giaa-dronecontrol/description/">The project</a></li>
+          
+            <li><a href="/tfg-giaa-dronecontrol/report/">Thesis report</a></li>
+          
+            <li><a href="/tfg-giaa-dronecontrol/about/">About</a></li>
+          
+        </ul>
+        
+      </li>
+    
+      <li>
+        
+          <span class="nav__sub-title">Videos: simulation</span>
+        
+
+        
+        <ul>
+          
+            <li><a href="/tfg-giaa-dronecontrol/videos/test-sitl-hand" class="active">Test SITL: hand solution</a></li>
+          
+            <li><a href="/tfg-giaa-dronecontrol/videos/test-sitl-follow">Test SITL: follow solution</a></li>
+          
+            <li><a href="/tfg-giaa-dronecontrol/videos/tune-yaw-controller">Tune yaw controller</a></li>
+          
+            <li><a href="/tfg-giaa-dronecontrol/videos/test-yaw-controller">Test yaw controller</a></li>
+          
+        </ul>
+        
+      </li>
+    
+      <li>
+        
+          <span class="nav__sub-title">Videos: flight tests</span>
+        
+
+        
+        <ul>
+          
+            <li><a href="/tfg-giaa-dronecontrol/videos/flight-test-offboard">Offboard config</a></li>
+          
+            <li><a href="/tfg-giaa-dronecontrol/videos/flight-test-onboard">Onboard config</a></li>
+          
+            <li><a href="/tfg-giaa-dronecontrol/videos/flight-test-hand">Hand solution</a></li>
+          
+            <li><a href="/tfg-giaa-dronecontrol/videos/flight-test-follow">Follow solution</a></li>
+          
+        </ul>
+        
+      </li>
+    
+  </ul>
+</nav>
+
+    
+  
+  </div>
+
+
+
+  <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
+    <meta itemprop="headline" content="Test SITL: hand solution">
+    <meta itemprop="description" content="">
+    <meta itemprop="datePublished" content="2023-03-12T14:07:10+01:00">
+    
+
+    <div class="page__inner-wrap">
+      
+
+      <section class="page__content" itemprop="text">
+        
+        <h2 id="recorded-simulation">Recorded simulation</h2>
+<p>A camera testing tool has been developed specifically for this test so that it is possible to establish a connection to PX4 SITL and process images without engaging any of the program’s control modules.
+The commands are then sent to PX4 through keyboard input.
+For example, the key “T” will make the simulated vehicle take off.
+THis video shows the image and text output of the program when the test camera tool is run with the hand detection feature activated.
+On the left side, the detection algorithm tracks the joint of the hand present in the captured image and on the right side, the logged information shows when the connection is established and keyboard commands are sent to the simulator.</p>
+
+<!-- Courtesy of embedresponsively.com //-->
+
+<div class="responsive-video-container">
+    <iframe src="https://www.youtube-nocookie.com/embed/0cQcU64oAlE" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen=""></iframe>
+  </div>
+
+
+        
+      </section>
+
+      <footer class="page__meta">
+        
+        
+
+
+        
+
+  <p class="page__date"><strong><i class="fas fa-fw fa-calendar-alt" aria-hidden="true"></i> Updated:</strong> <time datetime="2023-03-12T14:07:10+01:00">March 12, 2023</time></p>
+
+
+      </footer>
+
+      
+
+      
+  <nav class="pagination">
+    
+      <a href="/tfg-giaa-dronecontrol/videos/test-sitl-follow" class="pagination--pager" title="Test SITL: follow solution
+">Previous</a>
+    
+    
+      <a href="/tfg-giaa-dronecontrol/videos/test-yaw-controller" class="pagination--pager" title="Test yaw controller
+">Next</a>
+    
+  </nav>
+
+    </div>
+
+    
+  </article>
+
+  
+  
+</div>
+
+    </div>
+
+    
+      <div class="search-content">
+        <div class="search-content__inner-wrap"><form class="search-content__form" onkeydown="return event.key != 'Enter';">
+    <label class="sr-only" for="search">
+      Enter your search term...
+    </label>
+    <input type="search" id="search" class="search-input" tabindex="-1" placeholder="Enter your search term..." />
+  </form>
+  <div id="results" class="results"></div></div>
+
+      </div>
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+
+    
+
+    
+      <li><a href="/tfg-giaa-dronecontrol/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2023 Laura González Fernández. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/tfg-giaa-dronecontrol/assets/js/main.min.js"></script>
+
+
+
+
+<script src="/tfg-giaa-dronecontrol/assets/js/lunr/lunr.min.js"></script>
+<script src="/tfg-giaa-dronecontrol/assets/js/lunr/lunr-store.js"></script>
+<script src="/tfg-giaa-dronecontrol/assets/js/lunr/lunr-en.js"></script>
+
+
+
+
+
+
+
+  </body>
+</html>

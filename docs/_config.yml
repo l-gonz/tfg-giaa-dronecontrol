@@ -1,0 +1,82 @@
+# Welcome to Jekyll!
+#
+# This config file is meant for settings that affect your whole blog, values
+# which you are expected to set up once and rarely edit after that. If you find
+# yourself editing this file very often, consider using Jekyll's data files
+# feature for the data you need to update frequently.
+#
+# For technical reasons, this file is *NOT* reloaded automatically when you use
+# 'bundle exec jekyll serve'. If you change this file, please restart the server process.
+
+# Site settings
+# These are used to personalize your new site. If you look in the HTML files,
+# you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
+# You can create any custom variable you would like, and they will be accessible
+# in the templates via {{ site.myvariable }}.
+title: Exploration of Vision-Based Control Solutions for PX4-Driven UAVs
+subtitle: "Trabajo de Fin de Grado, Escuela de Ingeniería de Fuenlabrada, URJC"
+name: "Laura González Fernández"
+email: l.gonzalezfernan@gmail.com
+description: >- # this means to ignore newlines until "baseurl:"
+  The popular open-source platform PX4 aims to facilitate the programming of unmanned
+  aerial vehicles and their integration with new sensors and actuators and make it 
+  approachable for the common developer. This thesis aims to demonstrate how this platform can be
+  used to develop solutions that integrate computer vision techniques and use their input to
+  control the movement of an aerial vehicle, while employing easily-available and affordable
+  hardware with basic specifications. For this purpose, a viable solution is presented that
+  allows a drone to use an onboard camera to identify and keep track of a person in its field
+  of view to follow their movement.
+domain: l-gonz.github.io
+url: "https://l-gonz.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+baseurl: "/tfg-giaa-dronecontrol" # the subpath of your site, e.g. /blog
+twitter_username: "@xlaurita483"
+github_username:  l-gonz
+repository: "l-gonz/tfg-giaa-dronecontrol"
+
+# Build settings
+markdown: kramdown
+remote_theme: "mmistakes/minimal-mistakes@4.24.0"
+plugins:
+  - jekyll-feed
+  - jekyll-include-cache
+
+# Exclude from processing.
+# The following items will not be processed, by default. Create a custom list
+# to override the default setting.
+# exclude:
+#   - Gemfile
+#   - Gemfile.lock
+#   - node_modules
+#   - vendor/bundle/
+#   - vendor/cache/
+#   - vendor/gems/
+#   - vendor/ruby/
+
+minimal_mistakes_skin: "dirt"
+search: true
+include: ["_pages"]
+
+collections:
+  videos:
+    output: true
+    permalink: /:collection/:path
+
+defaults:
+  # _pages
+  - scope:
+      path: ""
+      type: pages
+    values:
+      layout: single
+      author_profile: false
+      sidebar:
+        nav: "docs"
+  # _videos
+  - scope:
+      path: ""
+      type: videos
+    values:
+      layout: single
+      author_profile: false
+      sidebar:
+        nav: "docs"
